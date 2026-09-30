@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="英単語カード">
+<meta name="theme-color" content="#0284c7">
+<title>中学英単語カード</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,"Hiragino Sans",system-ui,sans-serif;background:#e8f3fa;color:#1e293b;
+ padding:env(safe-area-inset-top) 14px calc(20px + env(safe-area-inset-bottom))}
+h1{font-size:18px;margin:14px 0 8px}
+.card0{background:#fff;border-radius:16px;padding:14px 16px;margin:10px 0;box-shadow:0 1px 4px #0002}
+button{font-family:inherit;font-size:17px;min-height:48px;border:0;border-radius:12px;padding:0 16px;background:#e2e8f0;color:#1e293b}
+button.p{background:#0284c7;color:#fff;font-weight:bold}button.g{background:#16a34a;color:#fff}button.y{background:#f59e0b;color:#fff}button.r{background:#dc2626;color:#fff}
+.full{width:100%}.row{display:flex;gap:8px}.row>*{flex:1}
+.bar{height:10px;background:#cbd5e1;border-radius:5px;overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:#0284c7}
+.stats{display:flex;justify-content:space-around;text-align:center}.stats b{display:block;font-size:26px;color:#0284c7}.stats span{font-size:12px;color:#64748b}
+.wrap{perspective:1000px;margin:10px 0}
+.card{position:relative;height:300px;transition:transform .45s;transform-style:preserve-3d}
+.card.flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#fff;border-radius:20px;box-shadow:0 4px 14px #0003;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center}
+.back{transform:rotateY(180deg);background:#fffbe6}
+.big{font-size:44px;font-weight:bold;word-break:break-word}.mid{font-size:30px;font-weight:bold;color:#b45309}
+.sub{color:#64748b;font-size:14px}.ex{margin-top:10px;font-size:17px}.tag{position:absolute;top:10px;left:14px;font-size:12px;color:#0284c7}
+.spk{position:absolute;top:8px;right:8px;width:52px;padding:0;font-size:24px;background:#e0f2fe}
+.hint{background:#fff8d6;border-left:4px solid #e0b400;padding:8px 12px;border-radius:6px;font-size:14px;margin:8px 0}
+label{display:flex;align-items:center;gap:8px;font-size:15px;margin:6px 0}input[type=checkbox]{width:22px;height:22px}
+.center{text-align:center}.small{font-size:12px;color:#64748b}
+</style></head><body>
+<h1>📇 中学英単語カード</h1>
+<div id="app"></div>
+<script>
+// ===== 保存（使えない環境でも動くように） =====
+const KEY="eng-vocab-cards-v1";let mem=null;
+function loadS(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return mem}}
+function saveS(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){mem=S}}
+let S=loadS()||{cards:{},days:[],settings:{slow:false,auto:true,write:false,newPerDay:10}};
+const INTERVALS=[0,1,2,4,8,16,32]; // 箱ごとの間隔（日）
+const dstr=(d=new Date())=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const addDays=(s,n)=>{const d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return dstr(d)};
+const esc=s=>String(s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+let words=[],byId={},queue=[],cur=null,flipped=false,done=0,total=0,wrongIds=new Set();
+// ===== 発音（端末の英語音声。iPhoneはアメリカ英語） =====
+let voice=null;
+function pickVoice(){const vs=(window.speechSynthesis&&speechSynthesis.getVoices())||[];
+ const us=vs.filter(v=>/^en[-_]US/i.test(v.lang));
+ voice=us.find(v=>/Samantha|Ava|Allison|Nicky|Enhanced|Premium/i.test(v.name))||us[0]||vs.find(v=>/^en/i.test(v.lang))||null}
+if(window.speechSynthesis){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
+function say(text){if(!window.speechSynthesis)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);
+ u.lang="en-US";if(voice)u.voice=voice;u.rate=S.settings.slow?0.6:0.9;speechSynthesis.speak(u)}catch(e){}}
+// ===== 出題ロジック（ライトナー式：覚えるほど間隔があく） =====
+const cardOf=id=>S.cards[id];
+function buildQueue(){
+ const t=dstr();
+ const due=words.filter(w=>{const c=cardOf(w.id);return c&&c.due<=t}).sort((a,b)=>cardOf(a.id).due.localeCompare(cardOf(b.id).due));
+ const newly=words.filter(w=>!cardOf(w.id));
+ const todayNew=Object.values(S.cards).filter(c=>c.first===t).length;
+ const n=Math.max(0,S.settings.newPerDay-todayNew);
+ queue=[...due,...newly.slice(0,n)];
+ for(let i=queue.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[queue[i],queue[j]]=[queue[j],queue[i]]}
+ total=queue.length;done=0;wrongIds=new Set();
+}
+function grade(level){ // 2=わかった 1=あやしい 0=わからない
+ const t=dstr(),w=cur;let c=S.cards[w.id];if(!c){c={box:0,due:t,first:t,miss:0};S.cards[w.id]=c}
+ if(level===2){c.box=Math.min(6,c.box+1);c.due=addDays(t,INTERVALS[c.box]);done++}
+ else if(level===1){c.due=addDays(t,1);done++}
+ else{c.box=1;c.miss++;c.due=addDays(t,1);if(!wrongIds.has(w.id)){wrongIds.add(w.id);queue.push(w);total++}done++}
+ if(!S.days.includes(t))S.days.push(t);
+ saveS();next()}
+function streak(){let n=0,d=dstr();const ds=new Set(S.days);if(!ds.has(d))d=addDays(d,-1);while(ds.has(d)){n++;d=addDays(d,-1)}return n}
+// ===== 画面 =====
+function home(){
+ const t=dstr(),cs=Object.entries(S.cards).map(([id,c])=>c);
+ const learned=cs.filter(c=>c.box>=4).length,due=cs.filter(c=>c.due<=t).length;
+ const todayNew=cs.filter(c=>c.first===t).length,left=Math.max(0,S.settings.newPerDay-todayNew);
+ const newAvail=words.filter(w=>!cardOf(w.id)).length;
+ document.getElementById("app").innerHTML=`
+ <div class="card0"><div class="stats"><div><b>${learned}</b><span>しっかり覚えた</span></div><div><b>${cs.length}</b><span>はじめた単語</span></div><div><b>🔥${streak()}</b><span>連続日数</span></div></div>
+ <div class="bar"><i style="width:${words.length?cs.length/words.length*100:0}%"></i></div><div class="small center">全${words.length}語</div></div>
+ <div class="card0"><div>今日の復習：<b>${due}</b> 語 ／ 新しい単語：あと <b>${Math.min(left,newAvail)}</b> 語</div>
+ <button class="p full" style="margin-top:10px" onclick="startSession()">▶ 今日の学習をはじめる</button></div>
+ <div class="card0"><b>設定</b>
+ <label><input type="checkbox" ${S.settings.auto?"checked":""} onchange="set('auto',this.checked)">めくったら自動で発音</label>
+ <label><input type="checkbox" ${S.settings.slow?"checked":""} onchange="set('slow',this.checked)">ゆっくり発音</label>
+ <label><input type="checkbox" ${S.settings.write?"checked":""} onchange="set('write',this.checked)">日本語→英語（ノートに書いてから確認）</label>
+ <label>1日の新しい単語 <select onchange="set('newPerDay',+this.value)">${[5,10,15,20].map(n=>`<option ${S.settings.newPerDay===n?"selected":""}>${n}</option>`).join("")}</select> 語</label>
+ <button class="full" style="margin-top:6px" onclick="say('Hello! Let us study English.')">🔊 発音テスト</button></div>
+ <div class="hint">📒 <b>ノートと一緒に</b>：めくったら、単語をノートに3回書いて、例文を1つうつそう。音は声に出して真似する。</div>
+ <div class="card0 small">記録はこのスマホの中に保存されます。ブラウザのデータを消すと記録も消えます。</div>`}
+function set(k,v){S.settings[k]=v;saveS();home()}
+function startSession(){buildQueue();next()}
+function next(){
+ if(!queue.length){finish();return}
+ cur=queue.shift();flipped=false;show()}
+function show(){
+ const w=cur,wr=S.settings.write;
+ const front=wr?`<div class="mid">${esc(w.meaning)}</div><div class="sub">${esc(w.pos)}</div><div class="sub" style="margin-top:14px">✏️ ノートに英語を書いてからめくろう</div>`
+  :`<div class="big">${esc(w.word)}</div><div class="sub" style="margin-top:6px">${esc(w.pos)}</div><div class="sub" style="margin-top:14px">タップでめくる</div>`;
+ const back=`<div class="big" style="font-size:38px">${esc(w.word)}</div><div class="mid" style="margin-top:8px">${esc(w.meaning)}</div>
+  <div class="ex">${esc(w.example)}<br><span class="sub">${esc(w.exampleJa)}</span></div>`;
+ document.getElementById("app").innerHTML=`
+ <div class="sub">${done} / ${total} <span style="float:right"><a href="#" onclick="home();return false">やめる</a></span></div>
+ <div class="bar"><i style="width:${total?done/total*100:0}%"></i></div>
+ <div class="wrap"><div class="card ${flipped?"flip":""}" id="card" onclick="flip()">
+  <div class="face"><span class="tag">${esc(w.topic)}</span>${wr?"":`<button class="spk" onclick="event.stopPropagation();say('${w.word.replace(/'/g,"\\'")}')">🔊</button>`}${front}</div>
+  <div class="face back"><button class="spk" onclick="event.stopPropagation();say('${w.word.replace(/'/g,"\\'")}')">🔊</button>${back}
+   <button class="spk" style="top:64px;font-size:14px;width:52px" onclick="event.stopPropagation();say('${w.example.replace(/'/g,"\\'")}')">例文🔊</button></div></div></div>
+ ${flipped?`<div class="row"><button class="r" onclick="grade(0)">😟<br><small>わからない</small></button><button class="y" onclick="grade(1)">🤔<br><small>あやしい</small></button><button class="g" onclick="grade(2)">😀<br><small>わかった</small></button></div>`
+ :`<button class="p full" onclick="flip()">答えを見る</button>`}`}
+function flip(){if(flipped)return;flipped=true;show();
+ if(S.settings.auto){setTimeout(()=>say(cur.word),150)}}
+function finish(){
+ const t=dstr(),cs=Object.values(S.cards);
+ document.getElementById("app").innerHTML=`<div class="card0 center"><div style="font-size:48px">🎉</div><h2>今日の学習おわり！</h2>
+ <p>${total}枚 やりました。連続 <b>${streak()}</b> 日目<br>しっかり覚えた単語：<b>${cs.filter(c=>c.box>=4).length}</b> 語</p>
+ <div class="hint">「わからない」の単語は明日また出ます。<br>最後にノートを見返して、まちがえた単語を1回ずつ書き直そう。</div>
+ <button class="p full" onclick="home()">ホームへ</button></div>`}
+fetch("words.json").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{
+ words=j;byId=Object.fromEntries(j.map(w=>[w.id,w]));home()})
+ .catch(e=>{document.getElementById("app").innerHTML='<div class="card0">単語データを読み込めません：'+esc(e.message)+'</div>'});
+</script></body></html>
