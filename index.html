@@ -36,7 +36,7 @@ label{display:flex;align-items:center;gap:8px;font-size:15px;margin:6px 0}input[
 const KEY="eng-vocab-cards-v1";let mem=null;
 function loadS(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return mem}}
 function saveS(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){mem=S}}
-let S=loadS()||{cards:{},days:[],settings:{slow:false,auto:true,write:false,newPerDay:10}};
+let S=loadS()||{cards:{},days:[],settings:{slow:false,auto:true,write:false,newPerDay:10,sec:3}};
 const INTERVALS=[0,1,2,4,8,16,32]; // 箱ごとの間隔（日）
 const dstr=(d=new Date())=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const addDays=(s,n)=>{const d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return dstr(d)};
@@ -66,13 +66,14 @@ function buildQueue(){
  for(let i=queue.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[queue[i],queue[j]]=[queue[j],queue[i]]}
  total=queue.length;done=0;wrongIds=new Set();
 }
-function grade(level){ // 2=わかった 1=あやしい 0=わからない
+function mark(level,reinsert){ // 2=わかった 1=あやしい 0=わからない
  const t=dstr(),w=cur;let c=S.cards[w.id];if(!c){c={box:0,due:t,first:t,miss:0};S.cards[w.id]=c}
  if(level===2){c.box=Math.min(6,c.box+1);c.due=addDays(t,INTERVALS[c.box]);done++}
  else if(level===1){c.due=addDays(t,1);done++}
- else{c.box=1;c.miss++;c.due=addDays(t,1);if(!wrongIds.has(w.id)){wrongIds.add(w.id);queue.push(w);total++}done++}
+ else{c.box=1;c.miss++;c.due=addDays(t,1);done++;if(reinsert)reinsert(w);else if(!wrongIds.has(w.id)){wrongIds.add(w.id);queue.push(w);total++}}
  if(!S.days.includes(t))S.days.push(t);
- saveS();next()}
+ saveS()}
+function grade(level){mark(level);next()}
 function streak(){let n=0,d=dstr();const ds=new Set(S.days);if(!ds.has(d))d=addDays(d,-1);while(ds.has(d)){n++;d=addDays(d,-1)}return n}
 // ===== 画面 =====
 function home(){
@@ -84,11 +85,13 @@ function home(){
  <div class="card0"><div class="stats"><div><b>${learned}</b><span>しっかり覚えた</span></div><div><b>${cs.length}</b><span>はじめた単語</span></div><div><b>🔥${streak()}</b><span>連続日数</span></div></div>
  <div class="bar"><i style="width:${words.length?cs.length/words.length*100:0}%"></i></div><div class="small center">全${words.length}語</div></div>
  <div class="card0"><div>今日の復習：<b>${due}</b> 語 ／ 新しい単語：あと <b>${Math.min(left,newAvail)}</b> 語</div>
- <button class="p full" style="margin-top:10px" onclick="startSession()">▶ 今日の学習をはじめる</button></div>
+ <button class="p full" style="margin-top:10px;background:#f59e0b" onclick="startSpeed()">⚡ 1秒リスタート（スワイプ・高速）</button>
+ <button class="p full" style="margin-top:8px" onclick="startSession()">▶ じっくり学習（カードをめくる）</button></div>
  <div class="card0"><b>設定</b>
  <label><input type="checkbox" ${S.settings.auto?"checked":""} onchange="set('auto',this.checked)">めくったら自動で発音</label>
  <label><input type="checkbox" ${S.settings.slow?"checked":""} onchange="set('slow',this.checked)">ゆっくり発音</label>
  <label><input type="checkbox" ${S.settings.write?"checked":""} onchange="set('write',this.checked)">日本語→英語（ノートに書いてから確認）</label>
+ <label>⚡の制限時間 <select onchange="set('sec',+this.value)">${[2,3,5].map(n=>`<option ${(S.settings.sec||3)===n?"selected":""}>${n}</option>`).join("")}</select> 秒</label>
  <label>1日の新しい単語 <select onchange="set('newPerDay',+this.value)">${[5,10,15,20].map(n=>`<option ${S.settings.newPerDay===n?"selected":""}>${n}</option>`).join("")}</select> 語</label>
  <button class="full" style="margin-top:6px" onclick="play('apple','w','apple')">🔊 発音テスト</button></div>
  <div class="hint">📒 <b>ノートと一緒に</b>：めくったら、単語をノートに3回書いて、例文を1つうつそう。音を聞いて、声に出して真似する。</div>
@@ -121,6 +124,53 @@ function finish(){
  <p>${total}枚 やりました。連続 <b>${streak()}</b> 日目<br>しっかり覚えた単語：<b>${cs.filter(c=>c.box>=4).length}</b> 語</p>
  <div class="hint">「わからない」の単語は明日また出ます。<br>最後にノートを見返して、まちがえた単語を1回ずつ書き直そう。</div>
  <button class="p full" onclick="home()">ホームへ</button></div>`}
+
+// ===== ⚡ 1秒リスタート：フレーズ＋音＋時間制限 =====
+let sp={q:[],i:0,known:0,unknown:[],timer:null,locked:false};
+const hl=(phrase,word)=>{const base=word.replace(/ ~$/,"").replace(/~/g,"").trim();const re=new RegExp("("+base.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"[a-z]*)","i");
+ return esc(phrase).replace(re,'<mark style="background:#fde68a;border-radius:4px">$1</mark>')};
+function startSpeed(){
+ buildQueue();const extra=words.filter(w=>!cardOf(w.id)&&!queue.includes(w)).slice(0,S.settings.newPerDay);
+ sp={q:[...queue,...extra],known:0,unknown:[],timer:null,locked:false,total:0};sp.total=sp.q.length;done=0;
+ if(!sp.q.length){finish();return}speedNext()}
+function speedNext(){
+ clearTimeout(sp.timer);if(!sp.q.length){speedEnd();return}
+ cur=sp.q.shift();sp.locked=false;const w=cur,sec=S.settings.sec||3;
+ document.getElementById("app").innerHTML=`
+ <div class="sub">${done} / ${sp.total}　<span style="float:right"><a href="#" onclick="clearTimeout(sp.timer);home();return false">やめる</a></span></div>
+ <div class="bar" style="height:14px"><i id="tb" style="width:100%;transition:width ${sec}s linear;background:#f59e0b"></i></div>
+ <div class="wrap" id="swc"><div class="card" style="transition:transform .2s"><div class="face">
+  <span class="tag">${esc(w.topic)}・${esc(w.pos)}</span>
+  <div class="big" style="font-size:36px;line-height:1.3">${hl(w.phrase||w.word,w.word)}</div>
+  <div class="sub" style="margin-top:14px">${sec}秒で「知ってる？」</div></div></div></div>
+ <div class="row"><button class="r" style="min-height:64px" onclick="speedAns(0)">✗ わからない</button><button class="g" style="min-height:64px" onclick="speedAns(2)">✓ 知ってる</button></div>
+ <div class="small center" style="margin-top:8px">← 左にスワイプ＝わからない　右にスワイプ＝知ってる →</div>`;
+ play(w.id,w.phrase?'p':'w',w.phrase||w.word);
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{const b=document.getElementById("tb");if(b)b.style.width="0%"}));
+ sp.timer=setTimeout(()=>speedAns(0),sec*1000);
+ const el=document.getElementById("swc");let x0=null;
+ el.ontouchstart=e=>{x0=e.touches[0].clientX};
+ el.ontouchend=e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(dx>60)speedAns(2);else if(dx<-60)speedAns(0)}}
+function speedAns(level){
+ if(sp.locked)return;sp.locked=true;clearTimeout(sp.timer);const w=cur;
+ if(level===2){sp.known++;mark(2);speedNext();return}
+ sp.unknown.push(w);
+ mark(0,x=>{sp.q.splice(Math.min(4,sp.q.length),0,x);sp.total++});
+ document.getElementById("app").innerHTML=`
+ <div class="sub">${done} / ${sp.total}</div><div class="bar"><i style="width:${done/sp.total*100}%"></i></div>
+ <div class="wrap"><div class="card"><div class="face back" style="transform:none"><span class="tag">答え</span>
+  <div class="big" style="font-size:40px">${esc(w.word)}</div><div class="mid" style="margin-top:8px">${esc(w.meaning)}</div>
+  <div class="ex">${hl(w.phrase||"",w.word)}<br><span class="sub">${esc(w.phraseJa||"")}</span></div></div></div></div>
+ <button class="p full" style="min-height:60px" onclick="speedNext()">次へ ▶</button>
+ <button class="full" style="margin-top:8px" onclick="play('${w.id}','w','${w.word.replace(/'/g,"\\'")}')">🔊 もう一度聞く</button>`;
+ setTimeout(()=>play(w.id,'w',w.word),100)}
+function speedEnd(){
+ const u=[...new Map(sp.unknown.map(w=>[w.id,w])).values()];
+ document.getElementById("app").innerHTML=`<div class="card0 center"><div style="font-size:48px">⚡</div><h2>おつかれさま！</h2>
+ <p>知ってる <b>${sp.known}</b> ／ わからなかった <b>${u.length}</b> 語<br>連続 <b>${streak()}</b> 日目</p>
+ ${u.length?`<div class="hint" style="text-align:left"><b>✏️ ノートに書こう</b><br>${u.map(w=>esc(w.word)+"（"+esc(w.meaning)+"）").join("<br>")}</div>`:""}
+ <button class="p full" onclick="home()">ホームへ</button></div>`}
+
 fetch("words.json").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{
  words=j;byId=Object.fromEntries(j.map(w=>[w.id,w]));home()})
  .catch(e=>{document.getElementById("app").innerHTML='<div class="card0">単語データを読み込めません：'+esc(e.message)+'</div>'});
