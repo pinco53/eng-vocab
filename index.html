@@ -7,42 +7,52 @@
 <title>中学英単語</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;font-family:-apple-system,"Hiragino Sans",system-ui,sans-serif;background:#f1f5f9;color:#0f172a;
- padding:calc(12px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto}
+body{margin:0 auto;font-family:-apple-system,"Hiragino Sans",system-ui,sans-serif;background:#f1f5f9;color:#0f172a;
+ padding:calc(12px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));max-width:520px}
 button{font-family:inherit;font-size:18px;border:0;border-radius:14px;min-height:54px;padding:0 16px;background:#e2e8f0;color:#0f172a;touch-action:manipulation}
 .main{width:100%;background:#0f766e;color:#fff;font-weight:bold;min-height:68px;font-size:21px}
-.full{width:100%}.ghost{background:none;color:#475569;font-size:15px;min-height:44px}
+.full{width:100%}.ghost{background:none;color:#475569;font-size:15px;min-height:40px}
+.hintb{background:#fef3c7;color:#92400e;font-size:16px;min-height:46px}
 .box{background:#fff;border-radius:18px;padding:18px;margin:12px 0;box-shadow:0 1px 3px #0001}
 .center{text-align:center}.dim{color:#64748b;font-size:14px}
 .bar{height:10px;background:#cbd5e1;border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;background:#0f766e;transition:width .3s}
-.word{font-size:44px;font-weight:bold;word-break:break-word;line-height:1.2}
-.mean{font-size:28px;font-weight:bold;color:#b45309}
-.step{font-size:13px;color:#0f766e;font-weight:bold;letter-spacing:.05em}
-.ch{display:block;width:100%;margin:10px 0;min-height:62px;font-size:20px;background:#fff;border:2px solid #cbd5e1}
+.word{font-size:42px;font-weight:bold;word-break:break-word;line-height:1.2}
+.sent{font-size:28px;font-weight:bold;line-height:1.3}
+.mean{font-size:26px;font-weight:bold;color:#b45309}
+.step{font-size:13px;color:#0f766e;font-weight:bold}
+.ch{display:block;width:100%;margin:10px 0;min-height:60px;font-size:20px;background:#fff;border:2px solid #cbd5e1}
+.ch.off{opacity:.25}
 .ok{background:#bbf7d0!important;border-color:#16a34a!important}.ng{background:#fecaca!important;border-color:#dc2626!important}
-.slots{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:14px 0;min-height:52px}
-.slot{width:38px;height:50px;border-bottom:3px solid #94a3b8;font-size:30px;font-weight:bold;display:flex;align-items:center;justify-content:center}
-.slot.gap{border:0;width:16px}
+.slots{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;margin:14px 0;min-height:52px}
+.slot{width:34px;height:48px;border-bottom:3px solid #0f766e;font-size:28px;font-weight:bold;display:flex;align-items:center;justify-content:center}
+.slot.fix{border-color:transparent;color:#64748b}.slot.gap{border:0;width:14px}
 .tiles{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
 .tile{width:50px;min-height:54px;padding:0;font-size:26px;font-weight:bold;background:#fff;border:2px solid #94a3b8}
 .tile.used{opacity:.2}
 .row{display:flex;gap:10px}.row>*{flex:1}
 .big3{display:flex;justify-content:space-around;text-align:center}.big3 b{display:block;font-size:30px;color:#0f766e}
 .note{background:#fef9c3;border-left:5px solid #eab308;border-radius:8px;padding:10px 14px;margin:12px 0;font-size:15px;text-align:left}
-.li{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #e2e8f0}
+.li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #e2e8f0}
+.dots{white-space:nowrap;font-size:15px;letter-spacing:2px}.dots .on{color:#0f766e}.dots .of{color:#cbd5e1}
+.lv{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:15px}.lv span{width:150px;flex:none}.lv .bar{flex:1}.lv b{width:44px;text-align:right}
 select{font-size:17px;padding:8px;border-radius:10px;border:1px solid #94a3b8;background:#fff;max-width:100%}
 label{display:block;margin:14px 0 6px;font-weight:bold}
+h2{margin:4px 0;font-size:20px}h3{margin:16px 0 4px;font-size:16px}
 </style></head><body>
 <div id="app"><p class="center dim">よみこみ中…</p></div>
 <script>
-// ===== 保存（これまでの記録と同じ場所を使う） =====
+// ===== 保存（これまでの記録と同じ場所） =====
 const KEY="eng-vocab-cards-v1";let mem=null;
 function loadS(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return mem}}
 function saveS(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){mem=S}}
-let S=loadS()||{cards:{},days:[],settings:{}};
-S.cards=S.cards||{};S.days=S.days||[];S.settings=S.settings||{};
+let S=loadS()||{};
+S.cards=S.cards||{};S.days=S.days||[];S.settings=S.settings||{};S.log=S.log||{};
 if(!S.v2){S.settings.newPerDay=5;S.v2=true}
-const INTERVALS=[0,1,2,4,8,16,32]; // 覚えるほど間があく（日）
+// 旧版の記録を「4段階」の形に直す
+for(const c of Object.values(S.cards)){if(c.lv===undefined){c.lv=(c.box||0)>=2?4:2;c.box=c.lv===4?Math.max(1,(c.box||1)-1):0;c.f=!!(c.miss>0&&c.lv<4)}c.e=c.e||{};c.h=c.h||0;c.miss=c.miss||0}
+const STAGE=["","① 単語を読む","② 短文を読む","③ 虫食いで書く","④ 並べ替えて書く"];
+const SHORT=["","読む","短文","虫食い","並べ替え"];
+const GAP=[0,2,4,8,16,32]; // ④まで進んだあとの復習の間隔（日）
 const RANGES=[["","すべて"],["1-38","カード1〜38（家族・身の回り・食事）"],["39-78","カード39〜78（動物・場所・時・曜日）"],["79-122","カード79〜122（月・季節・動詞）"],["123-158","カード123〜158（形容詞・疑問詞・前置詞）"]];
 const MAX_REVIEW=15;
 const $=()=>document.getElementById("app");
@@ -50,126 +60,179 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",
 const dstr=(d=new Date())=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const addDays=(s,n)=>{const d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return dstr(d)};
 const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-let all=[],words=[],ses=null;
+let all=[],words=[],ses=null,sp=null;
 function applyRange(){let r=S.settings.range;if(!RANGES.some(x=>x[0]===r))r=S.settings.range="";if(!r){words=all;return}const [a,b]=r.split("-").map(Number);words=all.filter(w=>w.no>=a&&w.no<=b)}
-// ===== 音声 =====
-let au=null;
+const card=w=>S.cards[w.id];
+const lvOf=w=>card(w)?card(w).lv:0;
+// ===== 音 =====
+let au=null,ac=null;
 function play(id,kind){try{if(au)au.pause();au=new Audio("audio/"+kind+"/"+id+".m4a");au.playbackRate=S.settings.slow?0.75:1;const p=au.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
-let ac=null;
 function beep(f,d,type){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;ac=ac||new A();const o=ac.createOscillator(),g=ac.createGain();o.type=type||"sine";o.frequency.value=f;g.gain.value=.06;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d)}catch(e){}}
-// ===== 記録 =====
-function touchDay(){const t=dstr();if(!S.days.includes(t))S.days.push(t)}
-function card(w){return S.cards[w.id]}
-function recWrong(w){const t=dstr();const c=S.cards[w.id]||(S.cards[w.id]={box:0,first:t,miss:0});c.box=1;c.miss=(c.miss||0)+1;c.due=addDays(t,1);touchDay();saveS()}
-function recRight(w){const t=dstr();const c=S.cards[w.id]||(S.cards[w.id]={box:0,first:t,miss:0});c.box=Math.min(6,(c.box||0)+1);c.due=addDays(t,INTERVALS[c.box]);touchDay();saveS()}
+// ===== 記録（どの段階で、正解・まちがい・ヒントだったか） =====
+function grade(w,stage,ok,hinted){const t=dstr();
+ const c=S.cards[w.id]||(S.cards[w.id]={lv:0,box:0,first:t,miss:0,e:{},h:0});
+ const L=S.log[t]||(S.log[t]={ok:0,ng:0,hint:0});if(!S.days.includes(t))S.days.push(t);
+ if(ok&&!hinted){L.ok++;c.lv=Math.max(c.lv,stage);c.f=false;
+  if(stage===4){c.box=Math.min(5,(c.box||0)+1);c.due=addDays(t,GAP[c.box])}else c.due=addDays(t,1)}
+ else if(ok){L.hint++;c.h++;c.due=addDays(t,1)}
+ else{L.ng++;c.e[stage]=(c.e[stage]||0)+1;c.miss++;c.f=true;c.due=addDays(t,1);if(stage===4)c.box=0}
+ saveS()}
 function streak(){let n=0,d=dstr();const ds=new Set(S.days);if(!ds.has(d))d=addDays(d,-1);while(ds.has(d)){n++;d=addDays(d,-1)}return n}
-const weak=()=>all.filter(w=>{const c=card(w);return c&&c.miss>0&&c.box<=2});
+const weak=()=>all.filter(w=>card(w)&&card(w).f);
 function plan(){const t=dstr();
  const due=words.filter(w=>{const c=card(w);return c&&c.due<=t});
  const todayNew=Object.values(S.cards).filter(c=>c.first===t).length;
  const bonus=(S.bonus&&S.bonus.date===t)?S.bonus.n:0;
  const n=Math.max(0,(S.settings.newPerDay||5)+bonus-todayNew);
- const fresh=words.filter(w=>!card(w)).slice(0,n);
- return {due,fresh,left:words.filter(w=>!card(w)).length}}
+ const rest=words.filter(w=>!card(w));
+ return {due,fresh:rest.slice(0,n),left:rest.length}}
 // ===== ホーム =====
-function home(){ses=null;const p=plan(),cs=all.filter(w=>card(w)),strong=cs.filter(w=>card(w).box>=4).length,wk=weak().length;
+function home(){ses=null;const p=plan(),cs=all.filter(w=>card(w)),wr=cs.filter(w=>lvOf(w)>=4).length;
  const rev=Math.min(p.due.length,MAX_REVIEW),any=rev+p.fresh.length>0;
- $().innerHTML=`<h1 style="font-size:20px;margin:6px 0 2px">中学英単語</h1><div class="dim">1日5分。ボタンを押すだけ。</div>
- <div class="box"><div class="big3"><div><b>${cs.length}</b><span class="dim">はじめた</span></div><div><b>${strong}</b><span class="dim">しっかり覚えた</span></div><div><b>${streak()}</b><span class="dim">日つづけた</span></div></div>
+ $().innerHTML=`<h1 style="font-size:20px;margin:6px 0 2px">中学英単語</h1><div class="dim">読む → 書く の順に、少しずつ。1日5分。</div>
+ <div class="box"><div class="big3"><div><b>${cs.length}</b><span class="dim">はじめた</span></div><div><b>${wr}</b><span class="dim">書ける</span></div><div><b>${streak()}</b><span class="dim">日つづけた</span></div></div>
  <div class="bar" style="margin-top:14px"><i style="width:${all.length?cs.length/all.length*100:0}%"></i></div><div class="dim center" style="margin-top:4px">全${all.length}語</div></div>
- ${any?`<button class="main" onclick="start()">今日の学習をはじめる</button><div class="dim center" style="margin-top:8px">復習 ${rev}語 ＋ 新しい単語 ${p.fresh.length}語${p.due.length>rev?`（復習の残り ${p.due.length-rev}語は次の回に）`:""}</div>`
- :`<div class="box center"><div style="font-size:40px">🎉</div><b>今日の分はおわり！</b><div class="dim">また明日。復習は明日から出ます。</div></div>
- ${p.left?`<button class="full" onclick="more()">あと5語すすめる</button>`:""}`}
- <div style="margin-top:22px">${wk?`<button class="full" onclick="weakList()">📕 わからなかった単語（${wk}語）</button>`:""}</div>
+ ${any?`<button class="main" onclick="start()">今日の学習をはじめる</button><div class="dim center" style="margin-top:8px">復習 ${rev}語 ＋ 新しい単語 ${p.fresh.length}語${p.due.length>rev?`（残り ${p.due.length-rev}語は次の回）`:""}</div>`
+ :`<div class="box center"><div style="font-size:40px">🎉</div><b>今日の分はおわり！</b><div class="dim">また明日。つづきは明日出ます。</div></div>${p.left?`<button class="full" onclick="more()">あと5語すすめる</button>`:""}`}
+ <button class="full" style="margin-top:22px" onclick="record()">📒 学習の記録を見る</button>
  <div class="center" style="margin-top:6px"><button class="ghost" onclick="settings()">⚙ 設定</button></div>`}
 function more(){const t=dstr();S.bonus={date:t,n:((S.bonus&&S.bonus.date===t)?S.bonus.n:0)+5};saveS();start()}
-// ===== 学習の流れ：復習 → 新しい単語（見る・聞く → 選ぶ → つづる） =====
+// ===== 学習の流れ =====
 const canSpell=w=>/^[A-Za-z' ]+$/.test(w.word)&&w.word.replace(/ /g,"").length<=12;
-const recall=w=>canSpell(w)?"spell":"pick";
-function start(list){const p=plan();let tasks=[],ws=[];
- if(list){ws=shuf(list);tasks=ws.map(w=>({w,type:recall(w)}))}
- else{const due=shuf(p.due).slice(0,MAX_REVIEW);ws=[...due,...p.fresh];
-  tasks=due.map(w=>({w,type:recall(w)}));
-  p.fresh.forEach(w=>{tasks.push({w,type:"intro"});tasks.push({w,type:"choice"})});
-  shuf(p.fresh).forEach(w=>tasks.push({w,type:recall(w)}))}
+const nextStage=w=>Math.min(4,lvOf(w)+1);
+function start(list){const p=plan();let tasks=[],ws;
+ const src=list?shuf(list):[...shuf(p.due).slice(0,MAX_REVIEW),...p.fresh];
+ const begin=src.filter(w=>lvOf(w)===0),older=src.filter(w=>lvOf(w)>0);ws=src;
+ older.forEach(w=>tasks.push({w,stage:nextStage(w)}));
+ begin.forEach(w=>{tasks.push({w,stage:0});tasks.push({w,stage:1})});
+ shuf(begin).forEach(w=>tasks.push({w,stage:2}));
  if(!tasks.length){home();return}
- ses={tasks,st:{},total:ws.length,finished:0,wrong:[],cur:null,locked:false,practice:!!list};
- ws.forEach(w=>ses.st[w.id]={wrong:false,need:0});next()}
+ ses={tasks,n:tasks.length,done:0,words:ws.length,wrong:[],cur:null,locked:false};next()}
 function next(){if(!ses)return;if(!ses.tasks.length){end();return}
- ses.cur=ses.tasks.shift();ses.locked=false;({intro,choice,spell,pick})[ses.cur.type](ses.cur.w)}
-const head=label=>`<div style="display:flex;justify-content:space-between;align-items:center"><span class="step">${label}</span><button class="ghost" style="min-height:32px" onclick="home()">やめる</button></div>
- <div class="bar"><i style="width:${ses.total?ses.finished/ses.total*100:0}%"></i></div>`;
-function again(t,pos){ses.tasks.splice(Math.min(pos,ses.tasks.length),0,t)}
-function finishWord(w){ses.finished++}
-// 1) 見る・聞く
-function intro(w){$().innerHTML=`${head("① 見る・聞く")}
+ const t=ses.cur=ses.tasks.shift();ses.locked=false;t.hint=false;const w=t.w;
+ if(t.stage===0)intro(w);else if(t.stage===1)read(w);else if(t.stage===2)sent(w);
+ else if(!canSpell(w))pick(w);else spell(w,t.stage===3)}
+const head=label=>`<div style="display:flex;justify-content:space-between;align-items:center"><span class="step">${label}</span><button class="ghost" onclick="home()">やめる</button></div>
+ <div class="bar"><i style="width:${ses.n?ses.done/ses.n*100:0}%"></i></div>`;
+const hintBtn=`<button class="hintb full" style="margin-top:14px" onclick="hint()">💡 ヒント</button>`;
+const later=(w,f)=>setTimeout(()=>{if(ses&&ses.cur&&ses.cur.w===w)f()},150);
+// 見る・聞く（はじめての単語）
+function intro(w){$().innerHTML=`${head("はじめての単語：見る・聞く")}
  <div class="box center"><div class="dim">${w.no?"カード "+w.no:""}</div><div class="word">${esc(w.word)}</div><div class="mean" style="margin-top:8px">${esc(w.meaning)}</div>
  <button style="margin:14px 0" onclick="play('${w.id}','w')">🔊 もう一度聞く</button>
- ${w.phrase?`<div style="font-size:20px">${esc(w.phrase)}</div><div class="dim">${esc(w.phraseJa||"")}</div>`:""}
- ${w.example?`<div style="font-size:17px;margin-top:10px">${esc(w.example)}</div><div class="dim">${esc(w.exampleJa||"")}</div>`:""}</div>
+ ${w.phrase?`<div style="font-size:21px">${esc(w.phrase)}</div><div class="dim">${esc(w.phraseJa||"")}</div>`:""}</div>
  <div class="dim center" style="margin-bottom:10px">声に出して1回言ってみよう</div>
- <button class="main" onclick="next()">次へ</button>`;setTimeout(()=>{if(ses&&ses.cur&&ses.cur.w===w)play(w.id,"w")},150)}
-// 2) 選ぶ（英語→意味）／つづれない語の思い出し（意味→英語）
-function options(w,key){const pool=shuf(all.filter(x=>x.id!==w.id&&x[key]!==w[key]));
+ <button class="main" onclick="ses.done++;next()">次へ</button>`;later(w,()=>play(w.id,"w"))}
+function options(w,key){const pool=shuf(all.filter(x=>x.id!==w.id&&x[key]&&x[key]!==w[key]));
  return shuf([w,...[...pool.filter(x=>x.pos===w.pos),...pool.filter(x=>x.pos!==w.pos)].slice(0,3)])}
-function choice(w){ses.opts=options(w,"meaning");$().innerHTML=`${head("② 意味を選ぶ")}
- <div class="box center"><div class="word">${esc(w.word)}</div><button style="margin-top:10px" onclick="play('${w.id}','w')">🔊</button></div>
- ${ses.opts.map((o,i)=>`<button class="ch" onclick="pickAns(${i})">${esc(o.meaning)}</button>`).join("")}`;setTimeout(()=>{if(ses&&ses.cur&&ses.cur.w===w)play(w.id,"w")},150)}
-function pick(w){ses.opts=options(w,"word");$().innerHTML=`${head("③ 英語を思い出す")}
- <div class="box center"><div class="dim">この意味の英語は？</div><div class="mean" style="margin-top:6px">${esc(w.meaning)}</div></div>
- ${ses.opts.map((o,i)=>`<button class="ch" onclick="pickAns(${i})">${esc(o.word)}</button>`).join("")}`}
-function pickAns(i){if(!ses||ses.locked)return;ses.locked=true;const t=ses.cur,w=t.w,ok=ses.opts[i].id===w.id;
+const optHtml=key=>ses.opts.map((o,i)=>`<button class="ch" onclick="pickAns(${i})">${esc(o[key])}</button>`).join("");
+// ① 単語を読む（英語 → 意味）
+function read(w){ses.opts=options(w,"meaning");$().innerHTML=`${head(STAGE[1])}
+ <div class="box center"><div class="word">${esc(w.word)}</div><button style="margin-top:10px" onclick="play('${w.id}','w')">🔊</button></div>${optHtml("meaning")}${hintBtn}`;later(w,()=>play(w.id,"w"))}
+// ② 短文を読む（短い英語 → 意味）
+function sent(w){if(!w.phrase||!w.phraseJa){read(w);return}ses.opts=options(w,"phraseJa");$().innerHTML=`${head(STAGE[2])}
+ <div class="box center"><div class="sent">${esc(w.phrase)}</div><button style="margin-top:10px" onclick="play('${w.id}','p')">🔊</button></div>${optHtml("phraseJa")}${hintBtn}`;later(w,()=>play(w.id,"p"))}
+// つづれない語（a / an など）は、意味 → 英語を選ぶ
+function pick(w){ses.opts=options(w,"word");$().innerHTML=`${head(STAGE[ses.cur.stage])}
+ <div class="box center"><div class="dim">この意味の英語は？</div><div class="mean" style="margin-top:6px">${esc(w.meaning)}</div></div>${optHtml("word")}${hintBtn}`}
+function pickAns(i){if(!ses||ses.locked)return;ses.locked=true;const w=ses.cur.w;
  [...document.querySelectorAll(".ch")].forEach((b,k)=>{if(ses.opts[k].id===w.id)b.classList.add("ok");else if(k===i)b.classList.add("ng")});
- result(ok)}
-// 3) つづる（文字タイル）
-let sp=null;
-function spell(w){const chars=w.word.split("");const letters=chars.filter(c=>c!==" ");
- const extra=shuf("aeioustrnlmdhc".split("")).filter(c=>!letters.includes(c)).slice(0,letters.length>=3?2:1);
- sp={chars,letters,pos:[],tiles:shuf([...letters,...extra]).map(ch=>({ch,used:false}))};drawSpell(w)}
-function drawSpell(w){let k=0;
- const slots=sp.chars.map(c=>c===" "?`<div class="slot gap"></div>`:`<div class="slot">${esc(sp.pos[k]!==undefined?sp.tiles[sp.pos[k++]].ch:(k++,""))}</div>`).join("");
- $().innerHTML=`${head("③ 英語をつづる")}
- <div class="box center"><div class="dim">この意味の英語は？</div><div class="mean" style="margin-top:6px">${esc(w.meaning)}</div>
- <div class="slots">${slots}</div><div id="fb"></div></div>
+ result(ses.opts[i].id===w.id)}
+// ③ 虫食い（一部の文字だけ） ④ 並べ替え（全部の文字）
+function spell(w,gap){const chars=w.word.split(""),L=chars.filter(c=>c!==" "),n=L.length;
+ let fixed=L.map(()=>false);
+ if(gap&&n>1){const k=Math.max(1,Math.ceil(n*0.4));const blanks=new Set(shuf([...Array(n-1).keys()].map(i=>i+1)).slice(0,k));fixed=L.map((_,i)=>!blanks.has(i))}
+ const need=L.filter((_,i)=>!fixed[i]);
+ const extra=gap?shuf("aeioustrnlmdhc".split("")).filter(c=>!need.includes(c)).slice(0,2):[];
+ let tiles=shuf([...need,...extra]);if(!gap&&n>1)for(let k=0;k<5&&tiles.join("")===need.join("");k++)tiles=shuf(tiles);
+ sp={chars,L,slot:L.map((c,i)=>fixed[i]?c:null),fixed,placed:[],tiles:tiles.map(ch=>({ch,used:false})),gap};draw()}
+function draw(){const w=ses.cur.w;let k=0;
+ const slots=sp.chars.map(c=>{if(c===" ")return `<div class="slot gap"></div>`;const i=k++;return `<div class="slot ${sp.fixed[i]?"fix":""}">${esc(sp.slot[i]||"")}</div>`}).join("");
+ const ctx=w.phrase&&w.phraseJa&&w.phrase.toLowerCase().includes(w.word.toLowerCase())&&w.phrase.toLowerCase()!==w.word.toLowerCase()
+  ?`<div class="dim" style="margin-top:6px">${esc(w.phraseJa)}：${esc(w.phrase.replace(new RegExp(w.word.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i"),"＿＿＿"))}</div>`:"";
+ $().innerHTML=`${head(STAGE[sp.gap?3:4])}
+ <div class="box center"><div class="dim">${sp.gap?"あいている文字を入れよう":"文字を並べて、英語にしよう"}</div><div class="mean" style="margin-top:6px">${esc(w.meaning)}</div>${ctx}
+ <div class="slots">${slots}</div></div>
  <div class="tiles">${sp.tiles.map((t,i)=>`<button class="tile ${t.used?"used":""}" onclick="tap(${i})">${esc(t.ch)}</button>`).join("")}</div>
- <div class="row" style="margin-top:14px"><button onclick="undo()">⌫ 1文字もどす</button><button onclick="giveUp()">わからない</button></div>`}
-function tap(i){if(!ses||ses.locked||sp.tiles[i].used)return;sp.tiles[i].used=true;sp.pos.push(i);const w=ses.cur.w;drawSpell(w);
- if(sp.pos.length===sp.letters.length){ses.locked=true;result(sp.pos.map(k=>sp.tiles[k].ch).join("")===sp.letters.join(""))}}
-function undo(){if(!ses||ses.locked||!sp.pos.length)return;sp.tiles[sp.pos.pop()].used=false;drawSpell(ses.cur.w)}
+ <div class="row" style="margin-top:14px"><button onclick="undo()">⌫ もどす</button><button class="hintb" onclick="hint()">💡 ヒント</button><button onclick="giveUp()">わからない</button></div>`}
+function put(i){const j=sp.slot.indexOf(null);if(j<0)return;sp.tiles[i].used=true;sp.slot[j]=sp.tiles[i].ch;sp.placed.push({j,i});draw();
+ if(sp.slot.indexOf(null)<0){ses.locked=true;result(sp.slot.join("")===sp.L.join(""))}}
+function tap(i){if(!ses||ses.locked||sp.tiles[i].used)return;put(i)}
+function undo(){if(!ses||ses.locked||!sp.placed.length)return;const p=sp.placed.pop();sp.tiles[p.i].used=false;sp.slot[p.j]=null;draw()}
 function giveUp(){if(!ses||ses.locked)return;ses.locked=true;result(false)}
-// 正解・不正解の処理（ここで復習の間隔が決まる）
-function result(ok){const t=ses.cur,w=t.w,st=ses.st[w.id],my=ses;
- if(ok){beep(660,.09);setTimeout(()=>beep(990,.12),80);play(w.id,"w");
-  if(t.type!=="choice"){
-   if(st.need>0){st.need--;if(st.need>0)again({w,type:t.type},3);else finishWord(w)}
-   else{if(!st.wrong)recRight(w);finishWord(w)}}
-  setTimeout(()=>{if(ses===my)next()},800);return}
- beep(170,.25,"sawtooth");
- if(!st.wrong){st.wrong=true;recWrong(w);ses.wrong.push(w)}
- if(t.type==="choice")again({w,type:"choice"},2);else{st.need=2;again({w,type:t.type},3)}
+// ヒント：読む問題は選択肢を2つ消して音を流す／書く問題は次の1文字を入れる
+function hint(){if(!ses||ses.locked)return;const t=ses.cur,w=t.w;t.hint=true;
+ if(sp&&(t.stage>=3)&&canSpell(w)){
+  // まちがって置いた文字があれば、そこまで戻してから正しい1文字を入れる
+  while(sp.placed.length&&sp.placed.some(p=>sp.slot[p.j]!==sp.L[p.j])){const p=sp.placed.pop();sp.tiles[p.i].used=false;sp.slot[p.j]=null}
+  const j=sp.slot.indexOf(null);if(j<0)return;const i=sp.tiles.findIndex(x=>!x.used&&x.ch===sp.L[j]);if(i>=0)put(i);play(w.id,"w");return}
+ const btns=[...document.querySelectorAll(".ch")];let cut=0;
+ shuf(btns.map((b,k)=>k)).forEach(k=>{if(cut<2&&ses.opts[k].id!==w.id&&!btns[k].classList.contains("off")){btns[k].classList.add("off");btns[k].disabled=true;cut++}});
+ if(t.stage!==3&&t.stage!==4)play(w.id,t.stage===2?"p":"w")}
+// 正解・まちがいの処理
+function result(ok){const t=ses.cur,w=t.w,my=ses;
+ if(!t.retry)grade(w,t.stage,ok,t.hint);
+ if(ok){beep(660,.09);setTimeout(()=>beep(990,.12),80);play(w.id,t.stage===2?"p":"w");ses.done++;
+  setTimeout(()=>{if(ses===my)next()},900);return}
+ beep(170,.25,"sawtooth");if(!t.retry)ses.wrong.push({w,stage:t.stage});
+ ses.tasks.splice(Math.min(3,ses.tasks.length),0,{w,stage:t.stage,retry:true});ses.n++;
  setTimeout(()=>{if(ses!==my)return;play(w.id,"w");
   $().innerHTML=`${head("こたえ")}<div class="box center"><div class="word">${esc(w.word)}</div><div class="mean" style="margin-top:8px">${esc(w.meaning)}</div>
   <button style="margin:14px 0" onclick="play('${w.id}','w')">🔊 もう一度聞く</button>
-  ${w.phrase?`<div style="font-size:20px">${esc(w.phrase)}</div><div class="dim">${esc(w.phraseJa||"")}</div>`:""}</div>
-  <div class="dim center" style="margin-bottom:10px">つづりをよく見てから進もう。あとでもう一度出ます。</div>
-  <button class="main" onclick="next()">次へ</button>`},t.type==="spell"?250:700)}
-function end(){const u=ses.wrong,n=ses.total;ses=null;const p=plan();beep(523,.15);setTimeout(()=>beep(784,.2),140);
- $().innerHTML=`<div class="box center"><div style="font-size:48px">🎉</div><h2 style="margin:6px 0">おつかれさま！</h2>
- <div>${n}語 学習しました ／ ${streak()}日つづいています</div></div>
- ${u.length?`<div class="note"><b>✏️ ノートに3回ずつ書こう</b><br>${u.map(w=>`${esc(w.word)}　${esc(w.meaning)}`).join("<br>")}</div>`:`<div class="note">ぜんぶ正解！ノートに今日の単語を1回ずつ書いておこう。</div>`}
- ${p.due.length?`<button class="full" style="margin-bottom:10px" onclick="start()">復習の残り ${p.due.length}語をやる</button>`:(p.left?`<button class="full" style="margin-bottom:10px" onclick="more()">あと5語すすめる</button>`:"")}
+  ${w.phrase?`<div style="font-size:21px">${esc(w.phrase)}</div><div class="dim">${esc(w.phraseJa||"")}</div>`:""}</div>
+  <div class="dim center" style="margin-bottom:10px">${t.stage>=3?"つづりを指でなぞってから進もう。":"声に出して読んでから進もう。"}あとでもう一度出ます。</div>
+  <button class="main" onclick="ses.done++;next()">次へ</button>`},t.stage>=3&&canSpell(w)?300:700)}
+function end(){const u=ses.wrong,n=ses.words;ses=null;const p=plan();beep(523,.15);setTimeout(()=>beep(784,.2),140);
+ const wr=u.filter(x=>x.stage>=3),rd=u.filter(x=>x.stage<3);
+ $().innerHTML=`<div class="box center"><div style="font-size:48px">🎉</div><h2>おつかれさま！</h2><div>${n}語 学習しました ／ ${streak()}日つづいています</div></div>
+ ${wr.length?`<div class="note"><b>✏️ ノートに3回ずつ書こう（書くところでまちがえた語）</b><br>${wr.map(x=>`${esc(x.w.word)}　${esc(x.w.meaning)}`).join("<br>")}</div>`:""}
+ ${rd.length?`<div class="note"><b>👀 声に出して読もう（読むところでまちがえた語）</b><br>${rd.map(x=>`${esc(x.w.word)}　${esc(x.w.meaning)}`).join("<br>")}</div>`:""}
+ ${!u.length?`<div class="note">ぜんぶ正解！今日の単語をノートに1回ずつ書いておこう。</div>`:""}
+ ${p.due.length?`<button class="full" style="margin-bottom:10px" onclick="start()">残りの復習 ${p.due.length}語をやる</button>`:(p.left?`<button class="full" style="margin-bottom:10px" onclick="more()">あと5語すすめる</button>`:"")}
  <button class="main" onclick="home()">おわる</button>`}
-// ===== わからなかった単語 =====
-function weakList(){const ws=weak();$().innerHTML=`<button class="ghost" onclick="home()">◀ もどる</button><h2 style="margin:4px 0">📕 わからなかった単語（${ws.length}語）</h2>
- <div class="dim">正解を重ねると、ここから自動で消えます。</div>
- ${ws.length?`<button class="main" style="margin:14px 0" onclick="start(weak())">この単語だけ練習する</button>`:""}
- <div class="box">${ws.map(w=>`<div class="li"><button style="min-height:44px;width:52px;padding:0" onclick="play('${w.id}','w')">🔊</button><div><b style="font-size:20px">${esc(w.word)}</b>　${esc(w.meaning)}<div class="dim">${esc(w.phrase||"")}　まちがい ${card(w).miss}回</div></div></div>`).join("")||"ありません"}</div>`}
+// ===== 学習の記録（ポートフォリオ） =====
+const dots=w=>{const l=lvOf(w);return `<span class="dots">${[1,2,3,4].map(i=>`<span class="${l>=i?"on":"of"}">●</span>`).join("")}</span>`};
+const errTxt=c=>{const a=[1,2,3,4].filter(i=>c.e[i]).map(i=>`${SHORT[i]}×${c.e[i]}`);if(c.h)a.push(`ヒント×${c.h}`);return a.join("　")};
+function groups(){const cs=all.filter(w=>card(w));
+ return {cs,
+  cantRead:cs.filter(w=>{const c=card(w);return c.lv<2&&((c.e[1]||0)+(c.e[2]||0))>0}),
+  readNotWrite:cs.filter(w=>{const c=card(w);return c.lv>=2&&c.lv<4&&((c.e[3]||0)+(c.e[4]||0))>0}),
+  forgot:cs.filter(w=>{const c=card(w);return c.lv>=4&&c.f})}}
+function record(){const g=groups(),cs=g.cs,n=cs.length||1,wk=weak();
+ const cnt=k=>cs.filter(w=>lvOf(w)>=k).length;
+ const row=w=>`<div class="li"><button style="min-height:44px;width:48px;padding:0;flex:none" onclick="play('${w.id}','w')">🔊</button><div style="flex:1"><b style="font-size:19px">${esc(w.word)}</b>　${esc(w.meaning)}<div class="dim">${errTxt(card(w))||"まちがいなし"}</div></div>${dots(w)}</div>`;
+ const sec=(title,desc,list)=>list.length?`<h3>${title}（${list.length}語）</h3><div class="dim">${desc}</div><div class="box" style="padding:6px 16px">${list.map(row).join("")}</div>`:"";
+ const days=Object.keys(S.log).sort().slice(-14).reverse();
+ const sorted=cs.slice().sort((a,b)=>(card(b).miss-card(a).miss)||((a.no||999)-(b.no||999)));
+ $().innerHTML=`<button class="ghost" onclick="home()">◀ もどる</button><h2>📒 学習の記録</h2>
+ <div class="box"><b>どこまでできるようになったか</b>
+ ${[1,2,3,4].map(k=>`<div class="lv"><span>${STAGE[k]}</span><div class="bar"><i style="width:${cnt(k)/n*100}%"></i></div><b>${cnt(k)}語</b></div>`).join("")}
+ <div class="dim">はじめた ${cs.length}語のうち、それぞれの段階をヒントなしで正解した数です。</div></div>
+ ${wk.length?`<button class="main" style="min-height:58px;font-size:18px" onclick="start(weak())">いま つまずいている ${wk.length}語を練習する</button>`:""}
+ ${sec("読むところでつまずいている","単語や短文の意味がまだあいまいな語です。",g.cantRead)}
+ ${sec("読めるけれど、まだ書けない","意味はわかるが、つづりでまちがえた語です。",g.readNotWrite)}
+ ${sec("書けたけれど、忘れかけている","一度は書けたが、復習でまちがえた語です。",g.forgot)}
+ ${days.length?`<h3>日ごとの記録</h3><div class="box" style="padding:6px 16px">${days.map(d=>{const l=S.log[d],t=l.ok+l.ng+l.hint;return `<div class="li"><div style="flex:1">${d.slice(5).replace("-","/")}</div><div class="dim">${t}問　正解${l.ok}　ヒント${l.hint}　まちがい${l.ng}</div></div>`}).join("")}</div>`:""}
+ <h3>単語ごとの記録（${cs.length}語）</h3><div class="dim">●は左から ①読む ②短文 ③虫食い ④並べ替え。まちがいの多い順です。</div>
+ <div class="box" style="padding:6px 16px">${sorted.map(row).join("")||"まだありません"}</div>
+ <button class="full" onclick="copyRec()">記録を文字でコピーする</button><div id="cp" class="dim center" style="margin-top:6px"></div>`}
+function copyRec(){const g=groups(),cs=g.cs,cnt=k=>cs.filter(w=>lvOf(w)>=k).length;
+ const lst=l=>l.map(w=>`${w.word}(${errTxt(card(w))})`).join("、")||"なし";
+ const txt=`【英単語 学習の記録 ${dstr()}】\nはじめた ${cs.length}語／つづけた日数 ${streak()}日\n①単語を読む ${cnt(1)}語　②短文を読む ${cnt(2)}語　③虫食いで書く ${cnt(3)}語　④並べ替えて書く ${cnt(4)}語\n読むところでつまずき：${lst(g.cantRead)}\n読めるが書けない：${lst(g.readNotWrite)}\n忘れかけ：${lst(g.forgot)}`;
+ const done=m=>{const e=document.getElementById("cp");if(e)e.textContent=m};
+ try{navigator.clipboard.writeText(txt).then(()=>done("コピーしました"),()=>done(txt))}catch(e){done(txt)}}
 // ===== 設定 =====
-function settings(){$().innerHTML=`<button class="ghost" onclick="home()">◀ もどる</button><h2 style="margin:4px 0">⚙ 設定</h2><div class="box">
+function settings(){$().innerHTML=`<button class="ghost" onclick="home()">◀ もどる</button><h2>⚙ 設定</h2><div class="box">
  <label>1日の新しい単語</label><select onchange="setv('newPerDay',+this.value)">${[5,10].map(n=>`<option value="${n}" ${(S.settings.newPerDay||5)===n?"selected":""}>${n}語</option>`).join("")}</select>
  <label>範囲（重要単語カードの番号）</label><select onchange="setv('range',this.value)">${RANGES.map(([v,l])=>`<option value="${v}" ${(S.settings.range||"")===v?"selected":""}>${l}</option>`).join("")}</select>
- <label>音声の速さ</label><select onchange="setv('slow',this.value==='1')"><option value="0" ${S.settings.slow?"":"selected"}>ふつう</option><option value="1" ${S.settings.slow?"selected":""}>ゆっくり</option></select>
- </div><div class="dim">新しい単語は、重要単語カード（中1英語）の番号順に出ます。記録はこのスマホの中に保存されます。</div>`}
+ <label>音声の速さ</label><select onchange="setv('slow',this.value==='1')"><option value="0" ${S.settings.slow?"":"selected"}>ふつう</option><option value="1" ${S.settings.slow?"selected":""}>ゆっくり</option></select></div>
+ <div class="box"><b>この進め方の考え方</b><div style="font-size:15px;line-height:1.7;margin-top:6px">
+ ・<b>読む → 書く</b>：ことばは、見てわかる力が先に育ち、自分で書く力はあとから育ちます。<br>
+ ・<b>思い出す練習</b>：見直すより、答えを自分で思い出すほうが長く残ります。<br>
+ ・<b>間をあけて復習</b>：1日・2日・4日…と間をあけてくり返します。<br>
+ ・<b>ヒントは少しずつ減らす</b>：虫食い → 全部の文字、と手助けを減らします。<br>
+ ・<b>すぐに答え合わせ</b>：まちがえたら、その場で正しい形を見て聞きます。</div></div>
+ <div class="dim">新しい単語は、重要単語カード（中1英語）の番号順に出ます。記録はこのスマホの中に保存されます。</div>`}
 function setv(k,v){S.settings[k]=v;saveS();if(k==="range")applyRange()}
 fetch("words.json").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{all=j;applyRange();home()})
  .catch(e=>{$().innerHTML='<div class="box">単語データを読み込めません：'+esc(e.message)+'</div>'});
