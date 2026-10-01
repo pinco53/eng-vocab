@@ -49,8 +49,8 @@ function pickVoice(){const vs=(window.speechSynthesis&&speechSynthesis.getVoices
  voice=us.find(v=>/Samantha|Ava|Allison|Nicky|Enhanced|Premium/i.test(v.name))||us[0]||vs.find(v=>/^en/i.test(v.lang))||null}
 if(window.speechSynthesis){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
 let au=null;
-function play(id,kind,fallback){
- try{if(au){au.pause()}au=new Audio('audio/'+kind+'/'+id+'.m4a');au.playbackRate=S.settings.slow?0.75:1;
+function play(id,kind,fallback,rate){
+ try{if(au){au.pause()}au=new Audio('audio/'+kind+'/'+id+'.m4a');au.playbackRate=rate||(S.settings.slow?0.75:1);
   au.onerror=()=>say(fallback);const pr=au.play();if(pr&&pr.catch)pr.catch(()=>say(fallback))}catch(e){say(fallback)}}
 function say(text){if(!window.speechSynthesis)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);
  u.lang="en-US";if(voice)u.voice=voice;u.rate=S.settings.slow?0.6:0.9;speechSynthesis.speak(u)}catch(e){}}
@@ -87,17 +87,29 @@ function home(){
  <div class="card0"><div>今日の復習：<b>${due}</b> 語 ／ 新しい単語：あと <b>${Math.min(left,newAvail)}</b> 語</div>
  <button class="p full" style="margin-top:10px;background:#f59e0b" onclick="startSpeed()">⚡ 1秒リスタート（スワイプ・高速）</button>
  <button class="p full" style="margin-top:8px" onclick="startSession()">▶ じっくり学習（カードをめくる）</button></div>
+ ${weakCard()}
  <div class="card0"><b>設定</b>
  <label><input type="checkbox" ${S.settings.auto?"checked":""} onchange="set('auto',this.checked)">めくったら自動で発音</label>
  <label><input type="checkbox" ${S.settings.slow?"checked":""} onchange="set('slow',this.checked)">ゆっくり発音</label>
  <label><input type="checkbox" ${S.settings.write?"checked":""} onchange="set('write',this.checked)">日本語→英語（ノートに書いてから確認）</label>
  <label>⚡の制限時間 <select onchange="set('sec',+this.value)">${[2,3,5].map(n=>`<option ${(S.settings.sec||3)===n?"selected":""}>${n}</option>`).join("")}</select> 秒</label>
- <label>1日の新しい単語 <select onchange="set('newPerDay',+this.value)">${[5,10,15,20].map(n=>`<option ${S.settings.newPerDay===n?"selected":""}>${n}</option>`).join("")}</select> 語</label>
- <button class="full" style="margin-top:6px" onclick="play('apple','w','apple')">🔊 発音テスト</button></div>
+ <label>1日の新しい単語 <select onchange="set('newPerDay',+this.value)">${[5,10,15,20].map(n=>`<option ${S.settings.newPerDay===n?"selected":""}>${n}</option>`).join("")}</select> 語</label></div>
  <div class="hint">📒 <b>ノートと一緒に</b>：めくったら、単語をノートに3回書いて、例文を1つうつそう。音を聞いて、声に出して真似する。</div>
  <div class="card0 small">記録はこのスマホの中に保存されます。ブラウザのデータを消すと記録も消えます。</div>`}
+const weak=()=>words.filter(w=>{const c=cardOf(w.id);return c&&c.miss>0&&c.box<=2});
+function weakCard(){const n=weak().length;
+ return `<div class="card0"><b>📕 わからなかった単語：${n}語</b>
+ ${n?`<div class="row" style="margin-top:8px"><button onclick="showWeak()">一覧を見る</button><button class="y" onclick="startSpeed(weak())">🔁 ⚡くり返す</button></div>`:`<div class="small">まだありません。⚡で「わからない」を押した単語がここに集まります。</div>`}
+ <button class="full" style="margin-top:8px" onclick="startPron()">🎤 発音練習（お手本を聞いて、言ってみる）</button></div>`}
+function showWeak(){const ws=weak();
+ document.getElementById("app").innerHTML=`<div class="sub"><a href="#" onclick="home();return false">◀ もどる</a></div><h2 style="margin:6px 0">📕 わからなかった単語（${ws.length}語）</h2>
+ <div class="hint">「知ってる」を続けて正解すると、自動でこのリストから消えます。</div>
+ <div class="row"><button class="y" onclick="startSpeed(weak())">🔁 ⚡くり返す</button><button onclick="startSession(weak())">📇 じっくり</button><button onclick="startPron(weak())">🎤 発音</button></div>
+ ${ws.map(w=>`<div class="card0" style="display:flex;align-items:center;gap:10px"><button style="min-height:44px;width:52px;padding:0" onclick="play('${w.id}','w','${w.word.replace(/'/g,"\\'")}')">🔊</button>
+ <div style="flex:1"><b style="font-size:20px">${esc(w.word)}</b> <span class="sub">${esc(w.meaning)}</span><div class="sub">${esc(w.phrase||"")} ／ まちがい ${cardOf(w.id).miss}回</div></div></div>`).join("")}`}
 function set(k,v){S.settings[k]=v;saveS();home()}
-function startSession(){buildQueue();next()}
+function startSession(list){buildQueue();if(list){queue=shuf(list);total=queue.length}next()}
+function shuf(a){return a.slice().sort(()=>Math.random()-.5)}
 function next(){
  if(!queue.length){finish();return}
  cur=queue.shift();flipped=false;show()}
@@ -123,14 +135,16 @@ function finish(){
  document.getElementById("app").innerHTML=`<div class="card0 center"><div style="font-size:48px">🎉</div><h2>今日の学習おわり！</h2>
  <p>${total}枚 やりました。連続 <b>${streak()}</b> 日目<br>しっかり覚えた単語：<b>${cs.filter(c=>c.box>=4).length}</b> 語</p>
  <div class="hint">「わからない」の単語は明日また出ます。<br>最後にノートを見返して、まちがえた単語を1回ずつ書き直そう。</div>
+ ${u.length?`<button class="y full" style="min-height:56px;margin-bottom:8px" onclick="startSpeed(lastUnknown)">🔁 わからなかった ${u.length}語をもう一度（⚡）</button><button class="full" style="margin-bottom:8px" onclick="startPron(lastUnknown)">🎤 発音練習する</button>`:""}
  <button class="p full" onclick="home()">ホームへ</button></div>`}
 
 // ===== ⚡ 1秒リスタート：フレーズ＋音＋時間制限 =====
-let sp={q:[],i:0,known:0,unknown:[],timer:null,locked:false};
+let lastUnknown=[];let sp={q:[],i:0,known:0,unknown:[],timer:null,locked:false};
 const hl=(phrase,word)=>{const base=word.replace(/ ~$/,"").replace(/~/g,"").trim();const re=new RegExp("("+base.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"[a-z]*)","i");
  return esc(phrase).replace(re,'<mark style="background:#fde68a;border-radius:4px">$1</mark>')};
-function startSpeed(){
- buildQueue();const extra=words.filter(w=>!cardOf(w.id)&&!queue.includes(w)).slice(0,S.settings.newPerDay);
+function startSpeed(list){
+ buildQueue();const extra=list?[]:words.filter(w=>!cardOf(w.id)&&!queue.includes(w)).slice(0,S.settings.newPerDay);
+ if(list)queue=shuf(list);
  sp={q:[...queue,...extra],known:0,unknown:[],timer:null,locked:false,total:0};sp.total=sp.q.length;done=0;
  if(!sp.q.length){finish();return}speedNext()}
 function speedNext(){
@@ -165,11 +179,52 @@ function speedAns(level){
  <button class="full" style="margin-top:8px" onclick="play('${w.id}','w','${w.word.replace(/'/g,"\\'")}')">🔊 もう一度聞く</button>`;
  setTimeout(()=>play(w.id,'w',w.word),100)}
 function speedEnd(){
- const u=[...new Map(sp.unknown.map(w=>[w.id,w])).values()];
+ const u=[...new Map(sp.unknown.map(w=>[w.id,w])).values()];lastUnknown=u;
  document.getElementById("app").innerHTML=`<div class="card0 center"><div style="font-size:48px">⚡</div><h2>おつかれさま！</h2>
  <p>知ってる <b>${sp.known}</b> ／ わからなかった <b>${u.length}</b> 語<br>連続 <b>${streak()}</b> 日目</p>
  ${u.length?`<div class="hint" style="text-align:left"><b>✏️ ノートに書こう</b><br>${u.map(w=>esc(w.word)+"（"+esc(w.meaning)+"）").join("<br>")}</div>`:""}
  <button class="p full" onclick="home()">ホームへ</button></div>`}
+
+// ===== 🎤 発音練習：お手本→言ってみる→音声認識で判定 =====
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let pr={q:[],i:0,ok:0,tgt:"w"};
+const norm=t=>String(t).toLowerCase().replace(/[^a-z' ]/g," ").split(/\s+/).filter(Boolean);
+function startPron(list){
+ let l=list&&list.length?list:weak();
+ if(!l.length)l=words.filter(w=>cardOf(w.id)).sort((a,b)=>cardOf(b.id).first.localeCompare(cardOf(a.id).first));
+ if(!l.length)l=words;
+ pr={q:shuf(l).slice(0,10),i:0,ok:0,tgt:"w"};pronShow()}
+function pronTarget(){const w=pr.q[pr.i];return pr.tgt==="p"&&w.phrase?w.phrase:w.word.replace(/ ?~/g,"")}
+function pronShow(msg,cls){
+ if(pr.i>=pr.q.length){document.getElementById("app").innerHTML=`<div class="card0 center"><div style="font-size:48px">🎤</div><h2>発音練習おわり！</h2><p>${pr.q.length}語中 <b>${pr.ok}</b> 語 言えた</p>
+  <div class="hint">口の形をまねして、声に出すのが上達の近道です。</div><button class="p full" onclick="home()">ホームへ</button></div>`;return}
+ const w=pr.q[pr.i],t=pronTarget();
+ document.getElementById("app").innerHTML=`
+ <div class="sub">${pr.i+1} / ${pr.q.length}　<span style="float:right"><a href="#" onclick="home();return false">やめる</a></span></div>
+ <div class="bar"><i style="width:${pr.i/pr.q.length*100}%"></i></div>
+ <div class="card0 center"><div class="row" style="margin-bottom:8px"><button class="${pr.tgt==="w"?"p":""}" onclick="pr.tgt='w';pronShow()">単語</button><button class="${pr.tgt==="p"?"p":""}" onclick="pr.tgt='p';pronShow()">フレーズ</button></div>
+  <div class="big" style="font-size:${t.length>14?30:44}px">${esc(t)}</div><div class="mid" style="margin:6px 0;font-size:22px">${esc(pr.tgt==="p"?w.phraseJa||w.meaning:w.meaning)}</div>
+  <div class="row" style="margin:10px 0"><button onclick="pronPlay(1)">🔊 お手本</button><button onclick="pronPlay(0.7)">🐢 ゆっくり</button></div>
+  ${SR?`<button class="r full" style="min-height:64px" id="mic" onclick="pronListen()">🎤 言ってみる（タップして話す）</button>`
+      :`<div class="hint">この画面では自動判定ができません。お手本を聞いて、声に出して言ってから、自分で判定してください。</div><div class="row"><button class="g" onclick="pronResult(true)">😀 言えた</button><button class="y" onclick="pronResult(false)">🤔 もう一度</button></div>`}
+  <div id="pmsg" class="${cls||""}" style="margin-top:10px;font-size:18px">${msg||"まず「お手本」を聞こう"}</div></div>
+ <button class="p full" onclick="pr.i++;pr.tgt='w';pronShow()">次へ ▶</button>`;
+ setTimeout(()=>pronPlay(1),150)}
+function pronPlay(rate){const w=pr.q[pr.i];play(w.id,pr.tgt==="p"&&w.phrase?'p':'w',pronTarget(),rate)}
+function pronResult(ok){if(ok){pr.ok++;pr.i++;pr.tgt="w";pronShow()}else pronShow("もう一度お手本を聞いて、まねしてみよう","small")}
+function pronListen(){
+ const m=document.getElementById("pmsg"),btn=document.getElementById("mic");
+ try{if(au)au.pause()}catch(e){}
+ const rec=new SR();rec.lang="en-US";rec.interimResults=false;rec.maxAlternatives=5;
+ m.textContent="🎧 聞いています…話してね";btn.disabled=true;
+ rec.onresult=e=>{const alts=[...e.results[0]].map(a=>a.transcript);const want=norm(pronTarget());
+  const best=Math.max(...alts.map(a=>{const h=norm(a);return want.filter(x=>h.includes(x)).length/want.length}));
+  if(best>=0.7){if(!pr.q[pr.i].__ok)pr.ok++;pr.q[pr.i].__ok=1;m.innerHTML=`✅ <b>OK！</b> 「${esc(alts[0])}」と聞こえました`}
+  else m.innerHTML=`🔁 「${esc(alts[0])}」と聞こえました。もう一度お手本をまねしてみよう`;btn.disabled=false};
+ rec.onerror=e=>{btn.disabled=false;m.textContent=e.error==="not-allowed"?"マイクの使用を許可してください（設定→Safari→マイク）":"うまく聞き取れませんでした。もう一度どうぞ"};
+ rec.onnomatch=()=>{btn.disabled=false;m.textContent="聞き取れませんでした。もう一度どうぞ"};
+ rec.onend=()=>{btn.disabled=false};
+ try{rec.start()}catch(e){btn.disabled=false}}
 
 fetch("words.json").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{
  words=j;byId=Object.fromEntries(j.map(w=>[w.id,w]));home()})
