@@ -3,6 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="英単語">
+<meta http-equiv="Cache-Control" content="no-cache">
 <meta name="theme-color" content="#0f766e">
 <title>中学英単語</title>
 <style>
@@ -50,6 +51,7 @@ S.cards=S.cards||{};S.days=S.days||[];S.settings=S.settings||{};S.log=S.log||{};
 if(!S.v2){S.settings.newPerDay=5;S.v2=true}
 // 旧版の記録を「4段階」の形に直す
 for(const c of Object.values(S.cards)){if(c.lv===undefined){c.lv=(c.box||0)>=2?4:2;c.box=c.lv===4?Math.max(1,(c.box||1)-1):0;c.f=!!(c.miss>0&&c.lv<4)}c.e=c.e||{};c.h=c.h||0;c.miss=c.miss||0}
+if(!S.v3){for(const c of Object.values(S.cards)){if(c.lv>=3){c.lv=2;c.box=0}}S.v3=true;saveS()}
 const STAGE=["","① 単語を読む","② 短文を読む","③ 虫食いで書く","④ 並べ替えて書く"];
 const SHORT=["","読む","短文","虫食い","並べ替え"];
 const GAP=[0,2,4,8,16,32]; // ④まで進んだあとの復習の間隔（日）
@@ -67,6 +69,8 @@ const lvOf=w=>card(w)?card(w).lv:0;
 // ===== 音 =====
 let au=null,ac=null;
 function play(id,kind){try{if(au)au.pause();au=new Audio("audio/"+kind+"/"+id+".m4a");au.playbackRate=S.settings.slow?0.75:1;const p=au.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
+function playSeq(id,kinds){try{if(au)au.pause();const k=kinds[0];au=new Audio("audio/"+k+"/"+id+".m4a");au.playbackRate=S.settings.slow?0.75:1;const a=au;if(kinds.length>1)a.onended=()=>{if(au===a)setTimeout(()=>{if(au===a)playSeq(id,kinds.slice(1))},250)};const p=a.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
+const seqOf=w=>w.phrase?["w","p"]:["w"];
 function beep(f,d,type){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;ac=ac||new A();const o=ac.createOscillator(),g=ac.createGain();o.type=type||"sine";o.frequency.value=f;g.gain.value=.06;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d)}catch(e){}}
 // ===== 記録（どの段階で、正解・まちがい・ヒントだったか） =====
 function grade(w,stage,ok,hinted){const t=dstr();
@@ -75,7 +79,7 @@ function grade(w,stage,ok,hinted){const t=dstr();
  if(ok&&!hinted){L.ok++;c.lv=Math.max(c.lv,stage);c.f=false;
   if(stage===4){c.box=Math.min(5,(c.box||0)+1);c.due=addDays(t,GAP[c.box])}else c.due=addDays(t,1)}
  else if(ok){L.hint++;c.h++;c.due=addDays(t,1)}
- else{L.ng++;c.e[stage]=(c.e[stage]||0)+1;c.miss++;c.f=true;c.due=addDays(t,1);if(stage===4)c.box=0}
+ else{L.ng++;c.e[stage]=(c.e[stage]||0)+1;c.miss++;c.f=true;c.due=addDays(t,1);if(stage===4){c.box=0;c.lv=Math.min(c.lv,2)}}
  saveS()}
 function streak(){let n=0,d=dstr();const ds=new Set(S.days);if(!ds.has(d))d=addDays(d,-1);while(ds.has(d)){n++;d=addDays(d,-1)}return n}
 const weak=()=>all.filter(w=>card(w)&&card(w).f);
@@ -95,7 +99,7 @@ function home(){ses=null;const p=plan(),cs=all.filter(w=>card(w)),wr=cs.filter(w
  ${any?`<button class="main" onclick="start()">今日の学習をはじめる</button><div class="dim center" style="margin-top:8px">復習 ${rev}語 ＋ 新しい単語 ${p.fresh.length}語${p.due.length>rev?`（残り ${p.due.length-rev}語は次の回）`:""}</div>`
  :`<div class="box center"><div style="font-size:40px">🎉</div><b>今日の分はおわり！</b><div class="dim">また明日。つづきは明日出ます。</div></div>${p.left?`<button class="full" onclick="more()">あと5語すすめる</button>`:""}`}
  <button class="full" style="margin-top:22px" onclick="record()">📒 学習の記録を見る</button>
- <div class="center" style="margin-top:6px"><button class="ghost" onclick="settings()">⚙ 設定</button></div>`}
+ <div class="center" style="margin-top:6px"><button class="ghost" onclick="settings()">⚙ 設定</button></div><div class="dim center">版 4</div>`}
 function more(){const t=dstr();S.bonus={date:t,n:((S.bonus&&S.bonus.date===t)?S.bonus.n:0)+5};saveS();start()}
 // ===== 学習の流れ =====
 const canSpell=w=>/^[A-Za-z' ]+$/.test(w.word)&&w.word.replace(/ /g,"").length<=12;
@@ -114,27 +118,28 @@ function next(){if(!ses)return;if(!ses.tasks.length){end();return}
  else if(!canSpell(w))pick(w);else spell(w,t.stage===3)}
 const head=label=>`<div style="display:flex;justify-content:space-between;align-items:center"><span class="step">${label}</span><button class="ghost" onclick="home()">やめる</button></div>
  <div class="bar"><i style="width:${ses.n?ses.done/ses.n*100:0}%"></i></div>`;
-const hintBtn=`<button class="hintb full" style="margin-top:14px" onclick="hint()">💡 ヒント</button>`;
+const hintBtn=`<button class="hintb full" style="margin:2px 0 4px" onclick="hint()">💡 ヒントを見る</button>`;
 const later=(w,f)=>setTimeout(()=>{if(ses&&ses.cur&&ses.cur.w===w)f()},150);
 // 見る・聞く（はじめての単語）
 function intro(w){$().innerHTML=`${head("はじめての単語：見る・聞く")}
  <div class="box center"><div class="dim">${w.no?"カード "+w.no:""}</div><div class="word">${esc(w.word)}</div><div class="mean" style="margin-top:8px">${esc(w.meaning)}</div>
- <button style="margin:14px 0" onclick="play('${w.id}','w')">🔊 もう一度聞く</button>
- ${w.phrase?`<div style="font-size:21px">${esc(w.phrase)}</div><div class="dim">${esc(w.phraseJa||"")}</div>`:""}</div>
- <div class="dim center" style="margin-bottom:10px">声に出して1回言ってみよう</div>
- <button class="main" onclick="ses.done++;next()">次へ</button>`;later(w,()=>play(w.id,"w"))}
+ <div><button style="margin:12px 0" onclick="play('${w.id}','w')">🔊 単語を聞く</button></div>
+ ${w.phrase?`<div style="font-size:22px;font-weight:bold">${esc(w.phrase)}</div><div class="dim">${esc(w.phraseJa||"")}</div><div><button style="margin:8px 0 12px" onclick="play('${w.id}','p')">🔊 短文を聞く</button></div>`:""}
+ ${w.example?`<div style="font-size:18px">${esc(w.example)}</div><div class="dim">${esc(w.exampleJa||"")}</div><div><button style="margin-top:8px" onclick="play('${w.id}','e')">🔊 文を聞く</button></div>`:""}</div>
+ <div class="dim center" style="margin-bottom:10px">聞いたあと、声に出して言ってみよう</div>
+ <button class="main" onclick="ses.done++;next()">次へ</button>`;later(w,()=>playSeq(w.id,seqOf(w)))}
 function options(w,key){const pool=shuf(all.filter(x=>x.id!==w.id&&x[key]&&x[key]!==w[key]));
  return shuf([w,...[...pool.filter(x=>x.pos===w.pos),...pool.filter(x=>x.pos!==w.pos)].slice(0,3)])}
 const optHtml=key=>ses.opts.map((o,i)=>`<button class="ch" onclick="pickAns(${i})">${esc(o[key])}</button>`).join("");
 // ① 単語を読む（英語 → 意味）
 function read(w){ses.opts=options(w,"meaning");$().innerHTML=`${head(STAGE[1])}
- <div class="box center"><div class="word">${esc(w.word)}</div><button style="margin-top:10px" onclick="play('${w.id}','w')">🔊</button></div>${optHtml("meaning")}${hintBtn}`;later(w,()=>play(w.id,"w"))}
+ <div class="box center"><div class="word">${esc(w.word)}</div><button style="margin-top:10px" onclick="play('${w.id}','w')">🔊</button></div>${hintBtn}${optHtml("meaning")}`;later(w,()=>play(w.id,"w"))}
 // ② 短文を読む（短い英語 → 意味）
 function sent(w){if(!w.phrase||!w.phraseJa){read(w);return}ses.opts=options(w,"phraseJa");$().innerHTML=`${head(STAGE[2])}
- <div class="box center"><div class="sent">${esc(w.phrase)}</div><button style="margin-top:10px" onclick="play('${w.id}','p')">🔊</button></div>${optHtml("phraseJa")}${hintBtn}`;later(w,()=>play(w.id,"p"))}
+ <div class="box center"><div class="sent">${esc(w.phrase)}</div><button style="margin-top:10px" onclick="play('${w.id}','p')">🔊</button></div>${hintBtn}${optHtml("phraseJa")}`;later(w,()=>play(w.id,"p"))}
 // つづれない語（a / an など）は、意味 → 英語を選ぶ
 function pick(w){ses.opts=options(w,"word");$().innerHTML=`${head(STAGE[ses.cur.stage])}
- <div class="box center"><div class="dim">この意味の英語は？</div><div class="mean" style="margin-top:6px">${esc(w.meaning)}</div></div>${optHtml("word")}${hintBtn}`}
+ <div class="box center"><div class="dim">この意味の英語は？</div><div class="mean" style="margin-top:6px">${esc(w.meaning)}</div></div>${hintBtn}${optHtml("word")}`}
 function pickAns(i){if(!ses||ses.locked)return;ses.locked=true;const w=ses.cur.w;
  [...document.querySelectorAll(".ch")].forEach((b,k)=>{if(ses.opts[k].id===w.id)b.classList.add("ok");else if(k===i)b.classList.add("ng")});
  result(ses.opts[i].id===w.id)}
@@ -153,8 +158,9 @@ function draw(){const w=ses.cur.w;let k=0;
  $().innerHTML=`${head(STAGE[sp.gap?3:4])}
  <div class="box center"><div class="dim">${sp.gap?"あいている文字を入れよう":"文字を並べて、英語にしよう"}</div><div class="mean" style="margin-top:6px">${esc(w.meaning)}</div>${ctx}
  <div class="slots">${slots}</div></div>
+ <button class="hintb full" style="margin-bottom:12px" onclick="hint()">💡 ヒントを見る（次の1文字）</button>
  <div class="tiles">${sp.tiles.map((t,i)=>`<button class="tile ${t.used?"used":""}" onclick="tap(${i})">${esc(t.ch)}</button>`).join("")}</div>
- <div class="row" style="margin-top:14px"><button onclick="undo()">⌫ もどす</button><button class="hintb" onclick="hint()">💡 ヒント</button><button onclick="giveUp()">わからない</button></div>`}
+ <div class="row" style="margin-top:14px"><button onclick="undo()">⌫ もどす</button><button onclick="giveUp()">わからない</button></div>`}
 function put(i){const j=sp.slot.indexOf(null);if(j<0)return;sp.tiles[i].used=true;sp.slot[j]=sp.tiles[i].ch;sp.placed.push({j,i});draw();
  if(sp.slot.indexOf(null)<0){ses.locked=true;result(sp.slot.join("")===sp.L.join(""))}}
 function tap(i){if(!ses||ses.locked||sp.tiles[i].used)return;put(i)}
@@ -172,14 +178,14 @@ function hint(){if(!ses||ses.locked)return;const t=ses.cur,w=t.w;t.hint=true;
 // 正解・まちがいの処理
 function result(ok){const t=ses.cur,w=t.w,my=ses;
  if(!t.retry)grade(w,t.stage,ok,t.hint);
- if(ok){beep(660,.09);setTimeout(()=>beep(990,.12),80);play(w.id,t.stage===2?"p":"w");ses.done++;
-  setTimeout(()=>{if(ses===my)next()},900);return}
+ if(ok){beep(660,.09);setTimeout(()=>beep(990,.12),80);const sq=t.stage===2?["p"]:(t.stage>=3?seqOf(w):["w"]);playSeq(w.id,sq);ses.done++;
+  setTimeout(()=>{if(ses===my)next()},sq.length>1?2300:1100);return}
  beep(170,.25,"sawtooth");if(!t.retry)ses.wrong.push({w,stage:t.stage});
- ses.tasks.splice(Math.min(3,ses.tasks.length),0,{w,stage:t.stage,retry:true});ses.n++;
- setTimeout(()=>{if(ses!==my)return;play(w.id,"w");
+ ses.tasks.splice(Math.min(3,ses.tasks.length),0,{w,stage:t.stage===4?3:t.stage,retry:true});ses.n++;
+ setTimeout(()=>{if(ses!==my)return;playSeq(w.id,seqOf(w));
   $().innerHTML=`${head("こたえ")}<div class="box center"><div class="word">${esc(w.word)}</div><div class="mean" style="margin-top:8px">${esc(w.meaning)}</div>
-  <button style="margin:14px 0" onclick="play('${w.id}','w')">🔊 もう一度聞く</button>
-  ${w.phrase?`<div style="font-size:21px">${esc(w.phrase)}</div><div class="dim">${esc(w.phraseJa||"")}</div>`:""}</div>
+  <div><button style="margin:12px 0" onclick="play('${w.id}','w')">🔊 単語を聞く</button></div>
+  ${w.phrase?`<div style="font-size:22px;font-weight:bold">${esc(w.phrase)}</div><div class="dim">${esc(w.phraseJa||"")}</div><div><button style="margin-top:8px" onclick="play('${w.id}','p')">🔊 短文を聞く</button></div>`:""}</div>
   <div class="dim center" style="margin-bottom:10px">${t.stage>=3?"つづりを指でなぞってから進もう。":"声に出して読んでから進もう。"}あとでもう一度出ます。</div>
   <button class="main" onclick="ses.done++;next()">次へ</button>`},t.stage>=3&&canSpell(w)?300:700)}
 function end(){const u=ses.wrong,n=ses.words;ses=null;const p=plan();beep(523,.15);setTimeout(()=>beep(784,.2),140);
@@ -234,6 +240,6 @@ function settings(){$().innerHTML=`<button class="ghost" onclick="home()">◀ �
  ・<b>すぐに答え合わせ</b>：まちがえたら、その場で正しい形を見て聞きます。</div></div>
  <div class="dim">新しい単語は、重要単語カード（中1英語）の番号順に出ます。記録はこのスマホの中に保存されます。</div>`}
 function setv(k,v){S.settings[k]=v;saveS();if(k==="range")applyRange()}
-fetch("words.json").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{all=j;applyRange();home()})
+fetch("words.json?v=4").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{all=j;applyRange();home()})
  .catch(e=>{$().innerHTML='<div class="box">単語データを読み込めません：'+esc(e.message)+'</div>'});
 </script></body></html>
