@@ -16,18 +16,27 @@ button.p{background:#0284c7;color:#fff;font-weight:bold}button.g{background:#16a
 .full{width:100%}.row{display:flex;gap:8px}.row>*{flex:1}
 .bar{height:10px;background:#cbd5e1;border-radius:5px;overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:#0284c7}
 .stats{display:flex;justify-content:space-around;text-align:center}.stats b{display:block;font-size:26px;color:#0284c7}.stats span{font-size:12px;color:#64748b}
-.wrap{perspective:1000px;margin:10px 0}
-.card{position:relative;height:300px;transition:transform .45s;transform-style:preserve-3d}
-.card.flip{transform:rotateY(180deg)}
+.wrap{margin:10px 0}
+.card{position:relative;height:300px}
+
 .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#fff;border-radius:20px;box-shadow:0 4px 14px #0003;
  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center}
-.back{transform:rotateY(180deg);background:#fffbe6}
+.back{background:#fffbe6}
+.flipcard .back{display:none}.flipcard.flip .back{display:flex}.flipcard.flip .front{display:none}
 .big{font-size:44px;font-weight:bold;word-break:break-word}.mid{font-size:30px;font-weight:bold;color:#b45309}
 .sub{color:#64748b;font-size:14px}.ex{margin-top:10px;font-size:17px}.tag{position:absolute;top:10px;left:14px;font-size:12px;color:#0284c7}
 .spk{position:absolute;top:8px;right:8px;width:52px;padding:0;font-size:24px;background:#e0f2fe}
 .hint{background:#fff8d6;border-left:4px solid #e0b400;padding:8px 12px;border-radius:6px;font-size:14px;margin:8px 0}
 label{display:flex;align-items:center;gap:8px;font-size:15px;margin:6px 0}input[type=checkbox]{width:22px;height:22px}
 .center{text-align:center}.small{font-size:12px;color:#64748b}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+@keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.25);opacity:1}100%{transform:scale(1)}}
+@keyframes hit{0%{transform:scale(1)}30%{transform:scale(.8) rotate(-8deg)}60%{transform:scale(1.1) rotate(6deg)}100%{transform:scale(1)}}
+.shake{animation:shake .4s}.pop{animation:pop .35s}.hit{animation:hit .4s}
+.ch{display:block;width:100%;margin:8px 0;min-height:58px;font-size:19px;background:#fff;border:2px solid #cbd5e1;border-radius:14px;color:#1e293b;padding:8px 12px;text-align:center}
+.ch.ok{background:#bbf7d0;border-color:#16a34a}.ch.ng{background:#fecaca;border-color:#dc2626}
+.hp{height:16px;background:#e2e8f0;border-radius:8px;overflow:hidden;border:2px solid #334155}.hp i{display:block;height:100%;background:linear-gradient(90deg,#ef4444,#f59e0b);transition:width .3s}
+.battle{background:linear-gradient(#1e1b4b,#312e81);color:#fff;border-radius:16px;padding:12px 14px;margin:8px 0;text-align:center}
 </style></head><body>
 <h1>📇 専門英単語カード（IT・教育・心理・AI）</h1>
 <div id="app"></div>
@@ -37,6 +46,7 @@ const KEY="eng-vocab-pro-cards-v1";let mem=null;
 function loadS(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return mem}}
 function saveS(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){mem=S}}
 let S=loadS()||{cards:{},days:[],settings:{slow:false,auto:true,write:false,newPerDay:10,sec:3,cat:""}};
+S.game=S.game||{xp:0,wins:0,best:0,battles:0};
 const INTERVALS=[0,1,2,4,8,16,32]; // 箱ごとの間隔（日）
 const dstr=(d=new Date())=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const addDays=(s,n)=>{const d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return dstr(d)};
@@ -61,9 +71,8 @@ function buildQueue(){
  const due=words.filter(w=>{const c=cardOf(w.id);return c&&c.due<=t}).sort((a,b)=>cardOf(a.id).due.localeCompare(cardOf(b.id).due));
  const newly=words.filter(w=>!cardOf(w.id));
  const todayNew=Object.values(S.cards).filter(c=>c.first===t).length;
- const n=Math.max(0,S.settings.newPerDay-todayNew);
- queue=[...due,...newly.slice(0,n)];
- for(let i=queue.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[queue[i],queue[j]]=[queue[j],queue[i]]}
+ const bonus=(S.bonus&&S.bonus.date===t)?S.bonus.n:0;const n=Math.max(0,S.settings.newPerDay+bonus-todayNew);
+ queue=[...shuf(due),...newly.slice(0,n)];
  total=queue.length;done=0;wrongIds=new Set();
 }
 function mark(level,reinsert){ // 2=わかった 1=あやしい 0=わからない
@@ -87,6 +96,7 @@ function home(){
  <div class="card0"><div>今日の復習：<b>${due}</b> 語 ／ 新しい単語：あと <b>${Math.min(left,newAvail)}</b> 語</div>
  <button class="p full" style="margin-top:10px;background:#f59e0b" onclick="startSpeed()">⚡ 1秒リスタート（スワイプ・高速）</button>
  <button class="p full" style="margin-top:8px" onclick="startSession()">▶ じっくり学習（カードをめくる）</button></div>
+ ${gameCard()}
  ${weakCard()}
  <div class="card0"><b>設定</b>
  <label><input type="checkbox" ${S.settings.auto?"checked":""} onchange="set('auto',this.checked)">めくったら自動で発音</label>
@@ -97,10 +107,18 @@ function home(){
  <label>1日の新しい単語 <select onchange="set('newPerDay',+this.value)">${[5,10,15,20].map(n=>`<option ${S.settings.newPerDay===n?"selected":""}>${n}</option>`).join("")}</select> 語</label></div>
  <div class="hint">📒 <b>ノートと一緒に</b>：めくったら、単語をノートに3回書いて、例文を1つうつそう。音を聞いて、声に出して真似する。</div>
  <div class="card0 small">記録はこのスマホの中に保存されます。ブラウザのデータを消すと記録も消えます。</div>`}
+const RANK=["見習い","ことば拾い","単語ハンター","英語ナイト","ワードマスター","言葉の勇者","伝説の語り部"];
+const lvOf=xp=>1+Math.floor(Math.sqrt(xp/40));
+function gameCard(){const g=S.game,lv=lvOf(g.xp),lo=40*(lv-1)**2,hi=40*lv**2;
+ return `<div class="card0" style="background:linear-gradient(135deg,#312e81,#1e1b4b);color:#fff">
+ <div style="display:flex;justify-content:space-between"><b>⚔️ モンスターバトル</b><span>Lv.${lv}　${RANK[Math.min(RANK.length-1,Math.floor((lv-1)/2))]}</span></div>
+ <div class="bar" style="background:#4338ca;margin:8px 0"><i style="width:${(g.xp-lo)/(hi-lo)*100}%;background:#fbbf24"></i></div>
+ <div class="small" style="color:#c7d2fe">XP ${g.xp}（次のレベルまであと ${hi-g.xp}）／ 最高コンボ ${g.best} ／ 勝利 ${g.wins}回</div>
+ <button class="p full" style="margin-top:8px;background:#f59e0b;min-height:56px" onclick="startBattle()">⚔️ バトルにちょうせん！（4択・12問）</button></div>`}
 const weak=()=>words.filter(w=>{const c=cardOf(w.id);return c&&c.miss>0&&c.box<=2});
 function weakCard(){const n=weak().length;
  return `<div class="card0"><b>📕 わからなかった単語：${n}語</b>
- ${n?`<div class="row" style="margin-top:8px"><button onclick="showWeak()">一覧を見る</button><button class="y" onclick="startSpeed(weak())">🔁 ⚡くり返す</button></div>`:`<div class="small">まだありません。⚡で「わからない」を押した単語がここに集まります。</div>`}
+ ${n?`<div class="row" style="margin-top:8px"><button onclick="showWeak()">一覧を見る</button><button class="y" onclick="startSpeed(weak())">🔁 ⚡くり返す</button></div><button class="full" style="margin-top:8px" onclick="startBattle(weak())">⚔️ わからなかった単語でバトル</button>`:`<div class="small">まだありません。⚡で「わからない」を押した単語がここに集まります。</div>`}
  <button class="full" style="margin-top:8px" onclick="startPron()">🎤 発音練習（お手本を聞いて、言ってみる）</button></div>`}
 function showWeak(){const ws=weak();
  document.getElementById("app").innerHTML=`<div class="sub"><a href="#" onclick="home();return false">◀ もどる</a></div><h2 style="margin:6px 0">📕 わからなかった単語（${ws.length}語）</h2>
@@ -125,8 +143,8 @@ function show(){
  document.getElementById("app").innerHTML=`
  <div class="sub">${done} / ${total} <span style="float:right"><a href="#" onclick="home();return false">やめる</a></span></div>
  <div class="bar"><i style="width:${total?done/total*100:0}%"></i></div>
- <div class="wrap"><div class="card ${flipped?"flip":""}" id="card" onclick="flip()">
-  <div class="face"><span class="tag">${esc(w.topic)}</span>${wr?"":`<button class="spk" onclick="event.stopPropagation();play('${w.id}','w',cur.word)">🔊</button>`}${front}</div>
+ <div class="wrap"><div class="card flipcard ${flipped?"flip":""}" id="card" onclick="flip()">
+  <div class="face front"><span class="tag">${w.no?"No."+w.no+"　":""}${esc(w.topic)}</span>${wr?"":`<button class="spk" onclick="event.stopPropagation();play('${w.id}','w',cur.word)">🔊</button>`}${front}</div>
   <div class="face back"><button class="spk" onclick="event.stopPropagation();play('${w.id}','w',cur.word)">🔊</button>${back}
    <button class="spk" style="top:64px;font-size:14px;width:52px" onclick="event.stopPropagation();play('${w.id}','e',cur.example)">例文🔊</button></div></div></div>
  ${flipped?`<div class="row"><button class="r" onclick="grade(0)">😟<br><small>わからない</small></button><button class="y" onclick="grade(1)">🤔<br><small>あやしい</small></button><button class="g" onclick="grade(2)">😀<br><small>わかった</small></button></div>`
@@ -135,11 +153,13 @@ function flip(){if(flipped)return;flipped=true;show();
  if(S.settings.auto){setTimeout(()=>play(cur.id,'w',cur.word),150)}}
 function finish(){
  const t=dstr(),cs=Object.values(S.cards);
- document.getElementById("app").innerHTML=`<div class="card0 center"><div style="font-size:48px">🎉</div><h2>今日の学習おわり！</h2>
- <p>${total}枚 やりました。連続 <b>${streak()}</b> 日目<br>しっかり覚えた単語：<b>${cs.filter(c=>c.box>=4).length}</b> 語</p>
+ document.getElementById("app").innerHTML=`<div class="card0 center"><div style="font-size:48px">🎉</div><h2>${total?"今日の学習おわり！":"今日の分はぜんぶ終わっています"}</h2>
+ <p>${total?total+"枚 やりました。":"新しい単語は今日の分を終え、復習は明日からです。"}連続 <b>${streak()}</b> 日目<br>しっかり覚えた単語：<b>${cs.filter(c=>c.box>=4).length}</b> 語</p>
  <div class="hint">「わからない」の単語は明日また出ます。<br>最後にノートを見返して、まちがえた単語を1回ずつ書き直そう。</div>
- ${u.length?`<button class="y full" style="min-height:56px;margin-bottom:8px" onclick="startSpeed(lastUnknown)">🔁 わからなかった ${u.length}語をもう一度（⚡）</button><button class="full" style="margin-bottom:8px" onclick="startPron(lastUnknown)">🎤 発音練習する</button>`:""}
+ <button class="y full" style="margin-bottom:8px" onclick="moreNew()">➕ 新しい単語をあと5語ふやして続ける</button>
+ <button class="full" style="margin-bottom:8px" onclick="startBattle()">⚔️ バトルで遊ぶ</button>
  <button class="p full" onclick="home()">ホームへ</button></div>`}
+function moreNew(){const t=dstr();S.bonus={date:t,n:((S.bonus&&S.bonus.date===t)?S.bonus.n:0)+5};saveS();startSession()}
 
 // ===== ⚡ 1秒リスタート：フレーズ＋音＋時間制限 =====
 let lastUnknown=[];let sp={q:[],i:0,known:0,unknown:[],timer:null,locked:false};
@@ -185,7 +205,8 @@ function speedEnd(){
  const u=[...new Map(sp.unknown.map(w=>[w.id,w])).values()];lastUnknown=u;
  document.getElementById("app").innerHTML=`<div class="card0 center"><div style="font-size:48px">⚡</div><h2>おつかれさま！</h2>
  <p>知ってる <b>${sp.known}</b> ／ わからなかった <b>${u.length}</b> 語<br>連続 <b>${streak()}</b> 日目</p>
- ${u.length?`<div class="hint" style="text-align:left"><b>✏️ ノートに書こう</b><br>${u.map(w=>esc(w.word)+"（"+esc(w.meaning)+"）").join("<br>")}</div>`:""}
+ ${u.length?`<div class="hint" style="text-align:left"><b>✏️ ノートに書こう</b><br>${u.map(w=>esc(w.word)+"（"+esc(w.meaning)+"）").join("<br>")}</div>
+ <button class="y full" style="min-height:56px;margin-bottom:8px" onclick="startSpeed(lastUnknown)">🔁 わからなかった ${u.length}語をもう一度（⚡）</button><button class="full" style="margin-bottom:8px" onclick="startPron(lastUnknown)">🎤 発音練習する</button>`:""}
  <button class="p full" onclick="home()">ホームへ</button></div>`}
 
 // ===== 🎤 発音練習：お手本→言ってみる→音声認識で判定 =====
@@ -213,7 +234,7 @@ function pronShow(msg,cls){
   <div id="pmsg" class="${cls||""}" style="margin-top:10px;font-size:18px">${msg||"まず「お手本」を聞こう"}</div></div>
  <button class="p full" onclick="pr.i++;pr.tgt='w';pronShow()">次へ ▶</button>`;
  setTimeout(()=>pronPlay(1),150)}
-function pronPlay(rate){const w=pr.q[pr.i];play(w.id,pr.tgt==="p"&&w.phrase?'p':'w',pronTarget(),rate)}
+function pronPlay(rate){const w=pr.q[pr.i];if(!w)return;play(w.id,pr.tgt==="p"&&w.phrase?'p':'w',pronTarget(),rate)}
 function pronResult(ok){if(ok){pr.ok++;pr.i++;pr.tgt="w";pronShow()}else pronShow("もう一度お手本を聞いて、まねしてみよう","small")}
 function pronListen(){
  const m=document.getElementById("pmsg"),btn=document.getElementById("mic");
@@ -228,6 +249,73 @@ function pronListen(){
  rec.onnomatch=()=>{btn.disabled=false;m.textContent="聞き取れませんでした。もう一度どうぞ"};
  rec.onend=()=>{btn.disabled=false};
  try{rec.start()}catch(e){btn.disabled=false}}
+
+// ===== ⚔ モンスターバトル（4択クイズ＋ライフ＋コンボ＋経験値） =====
+const MON=["👾","🐉","👻","🦖","🦇","🐙","🤖","👹","🦑","🐲"];
+let bt=null,btAC=null;
+function beep(f,d,type){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;btAC=btAC||new A();const o=btAC.createOscillator(),g=btAC.createGain();
+ o.type=type||"sine";o.frequency.value=f;g.gain.value=0.07;o.connect(g);g.connect(btAC.destination);o.start();o.stop(btAC.currentTime+d)}catch(e){}}
+const sfx={ok(c){beep(660,.1);setTimeout(()=>beep(880+Math.min(c,6)*60,.14),90)},ng(){beep(180,.25,"sawtooth")},win(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.18),i*120))}};
+function startBattle(list){
+ let src;if(list&&list.length)src=list;else{buildQueue();src=queue.length?queue.slice():words.slice()}
+ src=(list&&list.length?shuf(src):src).slice(0,12);
+ bt={q:src,i:0,hearts:3,hp:100,mon:0,combo:0,best:0,ok:0,xp:0,wrong:[],defeated:0,timer:null,locked:false,ch:[],dir:"en"};
+ battleQ()}
+function battleQ(){
+ if(!bt)return;clearTimeout(bt.timer);if(bt.i>=bt.q.length||bt.hearts<=0){battleEnd();return}
+ const w=bt.q[bt.i];cur=w;bt.locked=false;bt.dir=Math.random()<0.55?"en":"ja";
+ const pool=shuf(words.filter(x=>x.id!==w.id&&x.meaning!==w.meaning));
+ const dis=[...pool.filter(x=>x.pos===w.pos),...pool.filter(x=>x.pos!==w.pos)].slice(0,3);
+ bt.ch=shuf([w,...dis]);
+ const sec=(S.settings.sec||3)+3,en=bt.dir==="en";
+ document.getElementById("app").innerHTML=`
+ <div class="battle">
+  <div style="display:flex;justify-content:space-between;font-size:16px"><span>${"❤️".repeat(bt.hearts)}${"🖤".repeat(3-bt.hearts)}</span><span>${bt.i+1}/${bt.q.length}</span><span>🔥コンボ ${bt.combo}</span></div>
+  <div id="mon" style="font-size:64px;line-height:1.1;margin:6px 0">${MON[bt.mon%MON.length]}</div>
+  <div class="hp"><i id="mhp" style="width:${Math.max(0,bt.hp)}%"></i></div>
+  <div class="bar" style="background:#4338ca;height:8px;margin-top:8px"><i id="tb" style="width:100%;transition:width ${sec}s linear;background:#fbbf24"></i></div>
+ </div>
+ <div class="card0 center" style="padding:10px">
+  <div class="sub">${en?"この英語の意味は？":"この意味の英語は？"} <a href="#" onclick="return false" style="display:none"></a></div>
+  <div class="big" style="font-size:${en?40:30}px;margin:6px 0">${esc(en?w.word:w.meaning)}</div>
+  ${en?`<button style="min-height:44px" onclick="play('${w.id}','w','${w.word.replace(/'/g,"\\'")}')">🔊</button>`:""}
+ </div>
+ ${bt.ch.map((c,i)=>`<button class="ch" onclick="battleAns(${i})">${esc(en?c.meaning:c.word)}</button>`).join("")}
+ <div class="small center"><a href="#" onclick="clearTimeout(bt.timer);bt=null;home();return false">やめる</a></div>`;
+ if(en)setTimeout(()=>play(w.id,'w',w.word),100);
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{const b=document.getElementById("tb");if(b)b.style.width="0%"}));
+ bt.timer=setTimeout(()=>battleAns(-1),sec*1000)}
+function battleAns(i){
+ if(!bt||bt.locked||bt.i>=bt.q.length)return;bt.locked=true;const B=bt;clearTimeout(bt.timer);
+ const w=bt.q[bt.i],ok=i>=0&&bt.ch[i].id===w.id,btns=[...document.querySelectorAll(".ch")];
+ btns.forEach((b,k)=>{if(bt.ch[k].id===w.id)b.classList.add("ok");else if(k===i)b.classList.add("ng")});
+ const mon=document.getElementById("mon");
+ if(ok){
+  bt.combo++;bt.best=Math.max(bt.best,bt.combo);bt.ok++;mark(2);
+  const dmg=10+Math.min(bt.combo-1,5)*4;bt.hp-=dmg;bt.xp+=10+bt.combo*2;sfx.ok(bt.combo);
+  mon.classList.add("hit");document.getElementById("mhp").style.width=Math.max(0,bt.hp)+"%";
+  mon.insertAdjacentHTML("afterend",`<div class="pop" style="font-size:22px;color:#fbbf24">💥 ${dmg} ダメージ！${bt.combo>=3?" 🔥"+bt.combo+"コンボ":""}</div>`);
+  if(bt.hp<=0){bt.defeated++;bt.xp+=30;bt.mon++;bt.hp=100;sfx.win();mon.textContent="💫";mon.insertAdjacentHTML("afterend",`<div class="pop" style="font-size:20px;color:#a7f3d0">モンスターをたおした！ +30XP</div>`)}
+  setTimeout(()=>{if(bt!==B)return;bt.i++;battleQ()},bt.hp===100&&bt.defeated?1100:750)
+ }else{
+  bt.combo=0;bt.hearts--;bt.wrong.push(w);mark(0,()=>{});sfx.ng();
+  document.getElementById("app").classList.add("shake");
+  mon.insertAdjacentHTML("afterend",`<div class="pop" style="font-size:18px;color:#fecaca">💔 こたえ：${esc(w.word)}（${esc(w.meaning)}）</div>`);
+  setTimeout(()=>play(w.id,'w',w.word),150);
+  setTimeout(()=>{document.getElementById("app").classList.remove("shake");if(bt!==B)return;bt.i++;battleQ()},1700)}}
+function battleEnd(){
+ clearTimeout(bt.timer);const g=S.game,before=lvOf(g.xp),n=bt.q.length,acc=n?Math.round(bt.ok/Math.max(1,bt.i)*100):0;
+ const win=bt.hearts>0;if(win){bt.xp+=20;g.wins++}g.xp+=bt.xp;g.best=Math.max(g.best,bt.best);g.battles++;saveS();
+ const after=lvOf(g.xp),grade=!win?"C":acc>=95?"S":acc>=80?"A":"B";if(win)sfx.win();
+ const u=[...new Map(bt.wrong.map(w=>[w.id,w])).values()];lastUnknown=u;
+ document.getElementById("app").innerHTML=`<div class="battle"><div style="font-size:56px">${win?"🏆":"💀"}</div><h2 style="margin:4px 0">${win?"クリア！":"ゲームオーバー…"}</h2>
+ <div style="font-size:40px;color:#fbbf24;font-weight:bold">${grade}</div>
+ <p>正解 <b>${bt.ok}</b> ／ ${bt.i}問　最高コンボ <b>${bt.best}</b>　たおしたモンスター <b>${bt.defeated}</b>体<br>獲得 <b>+${bt.xp} XP</b>（合計 ${g.xp}）</p>
+ ${after>before?`<div class="pop" style="font-size:22px;color:#a7f3d0">🎉 レベルアップ！ Lv.${after}</div>`:""}</div>
+ ${u.length?`<div class="hint" style="text-align:left"><b>✏️ まちがえた単語（ノートに書こう）</b><br>${u.map(w=>esc(w.word)+"（"+esc(w.meaning)+"）").join("<br>")}</div>
+ <button class="y full" style="min-height:56px;margin-bottom:8px" onclick="startBattle(lastUnknown)">⚔️ まちがえた単語で再戦</button>`:""}
+ <button class="p full" style="min-height:56px;margin-bottom:8px" onclick="startBattle()">⚔️ もう一度バトル</button>
+ <button class="full" onclick="home()">ホームへ</button>`}
 
 fetch("words.json").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{
  allWords=j;byId=Object.fromEntries(j.map(w=>[w.id,w]));applyCat();home()})

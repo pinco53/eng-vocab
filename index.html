@@ -71,7 +71,7 @@ function buildQueue(){
  const due=words.filter(w=>{const c=cardOf(w.id);return c&&c.due<=t}).sort((a,b)=>cardOf(a.id).due.localeCompare(cardOf(b.id).due));
  const newly=words.filter(w=>!cardOf(w.id));
  const todayNew=Object.values(S.cards).filter(c=>c.first===t).length;
- const n=Math.max(0,S.settings.newPerDay-todayNew);
+ const bonus=(S.bonus&&S.bonus.date===t)?S.bonus.n:0;const n=Math.max(0,S.settings.newPerDay+bonus-todayNew);
  queue=[...shuf(due),...newly.slice(0,n)];
  total=queue.length;done=0;wrongIds=new Set();
 }
@@ -157,11 +157,13 @@ function flip(){if(flipped)return;flipped=true;show();
  if(S.settings.auto){setTimeout(()=>play(cur.id,'w',cur.word),150)}}
 function finish(){
  const t=dstr(),cs=Object.values(S.cards);
- document.getElementById("app").innerHTML=`<div class="card0 center"><div style="font-size:48px">🎉</div><h2>今日の学習おわり！</h2>
- <p>${total}枚 やりました。連続 <b>${streak()}</b> 日目<br>しっかり覚えた単語：<b>${cs.filter(c=>c.box>=4).length}</b> 語</p>
+ document.getElementById("app").innerHTML=`<div class="card0 center"><div style="font-size:48px">🎉</div><h2>${total?"今日の学習おわり！":"今日の分はぜんぶ終わっています"}</h2>
+ <p>${total?total+"枚 やりました。":"新しい単語は今日の分を終え、復習は明日からです。"}連続 <b>${streak()}</b> 日目<br>しっかり覚えた単語：<b>${cs.filter(c=>c.box>=4).length}</b> 語</p>
  <div class="hint">「わからない」の単語は明日また出ます。<br>最後にノートを見返して、まちがえた単語を1回ずつ書き直そう。</div>
- ${u.length?`<button class="y full" style="min-height:56px;margin-bottom:8px" onclick="startSpeed(lastUnknown)">🔁 わからなかった ${u.length}語をもう一度（⚡）</button><button class="full" style="margin-bottom:8px" onclick="startPron(lastUnknown)">🎤 発音練習する</button>`:""}
+ <button class="y full" style="margin-bottom:8px" onclick="moreNew()">➕ 新しい単語をあと5語ふやして続ける</button>
+ <button class="full" style="margin-bottom:8px" onclick="startBattle()">⚔️ バトルで遊ぶ</button>
  <button class="p full" onclick="home()">ホームへ</button></div>`}
+function moreNew(){const t=dstr();S.bonus={date:t,n:((S.bonus&&S.bonus.date===t)?S.bonus.n:0)+5};saveS();startSession()}
 
 // ===== ⚡ 1秒リスタート：フレーズ＋音＋時間制限 =====
 let lastUnknown=[];let sp={q:[],i:0,known:0,unknown:[],timer:null,locked:false};
@@ -207,7 +209,8 @@ function speedEnd(){
  const u=[...new Map(sp.unknown.map(w=>[w.id,w])).values()];lastUnknown=u;
  document.getElementById("app").innerHTML=`<div class="card0 center"><div style="font-size:48px">⚡</div><h2>おつかれさま！</h2>
  <p>知ってる <b>${sp.known}</b> ／ わからなかった <b>${u.length}</b> 語<br>連続 <b>${streak()}</b> 日目</p>
- ${u.length?`<div class="hint" style="text-align:left"><b>✏️ ノートに書こう</b><br>${u.map(w=>esc(w.word)+"（"+esc(w.meaning)+"）").join("<br>")}</div>`:""}
+ ${u.length?`<div class="hint" style="text-align:left"><b>✏️ ノートに書こう</b><br>${u.map(w=>esc(w.word)+"（"+esc(w.meaning)+"）").join("<br>")}</div>
+ <button class="y full" style="min-height:56px;margin-bottom:8px" onclick="startSpeed(lastUnknown)">🔁 わからなかった ${u.length}語をもう一度（⚡）</button><button class="full" style="margin-bottom:8px" onclick="startPron(lastUnknown)">🎤 発音練習する</button>`:""}
  <button class="p full" onclick="home()">ホームへ</button></div>`}
 
 // ===== 🎤 発音練習：お手本→言ってみる→音声認識で判定 =====
@@ -235,7 +238,7 @@ function pronShow(msg,cls){
   <div id="pmsg" class="${cls||""}" style="margin-top:10px;font-size:18px">${msg||"まず「お手本」を聞こう"}</div></div>
  <button class="p full" onclick="pr.i++;pr.tgt='w';pronShow()">次へ ▶</button>`;
  setTimeout(()=>pronPlay(1),150)}
-function pronPlay(rate){const w=pr.q[pr.i];play(w.id,pr.tgt==="p"&&w.phrase?'p':'w',pronTarget(),rate)}
+function pronPlay(rate){const w=pr.q[pr.i];if(!w)return;play(w.id,pr.tgt==="p"&&w.phrase?'p':'w',pronTarget(),rate)}
 function pronResult(ok){if(ok){pr.ok++;pr.i++;pr.tgt="w";pronShow()}else pronShow("もう一度お手本を聞いて、まねしてみよう","small")}
 function pronListen(){
  const m=document.getElementById("pmsg"),btn=document.getElementById("mic");
@@ -263,7 +266,7 @@ function startBattle(list){
  bt={q:src,i:0,hearts:3,hp:100,mon:0,combo:0,best:0,ok:0,xp:0,wrong:[],defeated:0,timer:null,locked:false,ch:[],dir:"en"};
  battleQ()}
 function battleQ(){
- clearTimeout(bt.timer);if(bt.i>=bt.q.length||bt.hearts<=0){battleEnd();return}
+ if(!bt)return;clearTimeout(bt.timer);if(bt.i>=bt.q.length||bt.hearts<=0){battleEnd();return}
  const w=bt.q[bt.i];cur=w;bt.locked=false;bt.dir=Math.random()<0.55?"en":"ja";
  const pool=shuf(words.filter(x=>x.id!==w.id&&x.meaning!==w.meaning));
  const dis=[...pool.filter(x=>x.pos===w.pos),...pool.filter(x=>x.pos!==w.pos)].slice(0,3);
@@ -282,12 +285,12 @@ function battleQ(){
   ${en?`<button style="min-height:44px" onclick="play('${w.id}','w','${w.word.replace(/'/g,"\\'")}')">🔊</button>`:""}
  </div>
  ${bt.ch.map((c,i)=>`<button class="ch" onclick="battleAns(${i})">${esc(en?c.meaning:c.word)}</button>`).join("")}
- <div class="small center"><a href="#" onclick="clearTimeout(bt.timer);home();return false">やめる</a></div>`;
+ <div class="small center"><a href="#" onclick="clearTimeout(bt.timer);bt=null;home();return false">やめる</a></div>`;
  if(en)setTimeout(()=>play(w.id,'w',w.word),100);
  requestAnimationFrame(()=>requestAnimationFrame(()=>{const b=document.getElementById("tb");if(b)b.style.width="0%"}));
  bt.timer=setTimeout(()=>battleAns(-1),sec*1000)}
 function battleAns(i){
- if(bt.locked)return;bt.locked=true;clearTimeout(bt.timer);
+ if(!bt||bt.locked||bt.i>=bt.q.length)return;bt.locked=true;const B=bt;clearTimeout(bt.timer);
  const w=bt.q[bt.i],ok=i>=0&&bt.ch[i].id===w.id,btns=[...document.querySelectorAll(".ch")];
  btns.forEach((b,k)=>{if(bt.ch[k].id===w.id)b.classList.add("ok");else if(k===i)b.classList.add("ng")});
  const mon=document.getElementById("mon");
@@ -297,13 +300,13 @@ function battleAns(i){
   mon.classList.add("hit");document.getElementById("mhp").style.width=Math.max(0,bt.hp)+"%";
   mon.insertAdjacentHTML("afterend",`<div class="pop" style="font-size:22px;color:#fbbf24">💥 ${dmg} ダメージ！${bt.combo>=3?" 🔥"+bt.combo+"コンボ":""}</div>`);
   if(bt.hp<=0){bt.defeated++;bt.xp+=30;bt.mon++;bt.hp=100;sfx.win();mon.textContent="💫";mon.insertAdjacentHTML("afterend",`<div class="pop" style="font-size:20px;color:#a7f3d0">モンスターをたおした！ +30XP</div>`)}
-  setTimeout(()=>{bt.i++;battleQ()},bt.hp===100&&bt.defeated?1100:750)
+  setTimeout(()=>{if(bt!==B)return;bt.i++;battleQ()},bt.hp===100&&bt.defeated?1100:750)
  }else{
   bt.combo=0;bt.hearts--;bt.wrong.push(w);mark(0,()=>{});sfx.ng();
   document.getElementById("app").classList.add("shake");
   mon.insertAdjacentHTML("afterend",`<div class="pop" style="font-size:18px;color:#fecaca">💔 こたえ：${esc(w.word)}（${esc(w.meaning)}）</div>`);
   setTimeout(()=>play(w.id,'w',w.word),150);
-  setTimeout(()=>{document.getElementById("app").classList.remove("shake");bt.i++;battleQ()},1700)}}
+  setTimeout(()=>{document.getElementById("app").classList.remove("shake");if(bt!==B)return;bt.i++;battleQ()},1700)}}
 function battleEnd(){
  clearTimeout(bt.timer);const g=S.game,before=lvOf(g.xp),n=bt.q.length,acc=n?Math.round(bt.ok/Math.max(1,bt.i)*100):0;
  const win=bt.hearts>0;if(win){bt.xp+=20;g.wins++}g.xp+=bt.xp;g.best=Math.max(g.best,bt.best);g.battles++;saveS();
