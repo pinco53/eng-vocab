@@ -16,12 +16,13 @@ button.p{background:#0284c7;color:#fff;font-weight:bold}button.g{background:#16a
 .full{width:100%}.row{display:flex;gap:8px}.row>*{flex:1}
 .bar{height:10px;background:#cbd5e1;border-radius:5px;overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:#0284c7}
 .stats{display:flex;justify-content:space-around;text-align:center}.stats b{display:block;font-size:26px;color:#0284c7}.stats span{font-size:12px;color:#64748b}
-.wrap{perspective:1000px;margin:10px 0}
-.card{position:relative;height:300px;transition:transform .45s;transform-style:preserve-3d}
-.card.flip{transform:rotateY(180deg)}
+.wrap{margin:10px 0}
+.card{position:relative;height:300px}
+
 .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#fff;border-radius:20px;box-shadow:0 4px 14px #0003;
  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center}
-.back{transform:rotateY(180deg);background:#fffbe6}
+.back{background:#fffbe6}
+.flipcard .back{display:none}.flipcard.flip .back{display:flex}.flipcard.flip .front{display:none}
 .big{font-size:44px;font-weight:bold;word-break:break-word}.mid{font-size:30px;font-weight:bold;color:#b45309}
 .sub{color:#64748b;font-size:14px}.ex{margin-top:10px;font-size:17px}.tag{position:absolute;top:10px;left:14px;font-size:12px;color:#0284c7}
 .spk{position:absolute;top:8px;right:8px;width:52px;padding:0;font-size:24px;background:#e0f2fe}
@@ -71,8 +72,7 @@ function buildQueue(){
  const newly=words.filter(w=>!cardOf(w.id));
  const todayNew=Object.values(S.cards).filter(c=>c.first===t).length;
  const n=Math.max(0,S.settings.newPerDay-todayNew);
- queue=[...due,...newly.slice(0,n)];
- for(let i=queue.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[queue[i],queue[j]]=[queue[j],queue[i]]}
+ queue=[...shuf(due),...newly.slice(0,n)];
  total=queue.length;done=0;wrongIds=new Set();
 }
 function mark(level,reinsert){ // 2=わかった 1=あやしい 0=わからない
@@ -147,8 +147,8 @@ function show(){
  document.getElementById("app").innerHTML=`
  <div class="sub">${done} / ${total} <span style="float:right"><a href="#" onclick="home();return false">やめる</a></span></div>
  <div class="bar"><i style="width:${total?done/total*100:0}%"></i></div>
- <div class="wrap"><div class="card ${flipped?"flip":""}" id="card" onclick="flip()">
-  <div class="face"><span class="tag">${w.no?"No."+w.no+"　":""}${esc(w.topic)}</span>${wr?"":`<button class="spk" onclick="event.stopPropagation();play('${w.id}','w',cur.word)">🔊</button>`}${front}</div>
+ <div class="wrap"><div class="card flipcard ${flipped?"flip":""}" id="card" onclick="flip()">
+  <div class="face front"><span class="tag">${w.no?"No."+w.no+"　":""}${esc(w.topic)}</span>${wr?"":`<button class="spk" onclick="event.stopPropagation();play('${w.id}','w',cur.word)">🔊</button>`}${front}</div>
   <div class="face back"><button class="spk" onclick="event.stopPropagation();play('${w.id}','w',cur.word)">🔊</button>${back}
    <button class="spk" style="top:64px;font-size:14px;width:52px" onclick="event.stopPropagation();play('${w.id}','e',cur.example)">例文🔊</button></div></div></div>
  ${flipped?`<div class="row"><button class="r" onclick="grade(0)">😟<br><small>わからない</small></button><button class="y" onclick="grade(1)">🤔<br><small>あやしい</small></button><button class="g" onclick="grade(2)">😀<br><small>わかった</small></button></div>`
@@ -259,7 +259,7 @@ function beep(f,d,type){try{const A=window.AudioContext||window.webkitAudioConte
 const sfx={ok(c){beep(660,.1);setTimeout(()=>beep(880+Math.min(c,6)*60,.14),90)},ng(){beep(180,.25,"sawtooth")},win(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.18),i*120))}};
 function startBattle(list){
  let src;if(list&&list.length)src=list;else{buildQueue();src=queue.length?queue.slice():words.slice()}
- src=shuf(src).slice(0,12);
+ src=(list&&list.length?shuf(src):src).slice(0,12);
  bt={q:src,i:0,hearts:3,hp:100,mon:0,combo:0,best:0,ok:0,xp:0,wrong:[],defeated:0,timer:null,locked:false,ch:[],dir:"en"};
  battleQ()}
 function battleQ(){
