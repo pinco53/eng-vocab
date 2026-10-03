@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="中1数学">
+<meta http-equiv="Cache-Control" content="no-cache">
+<meta name="theme-color" content="#c2410c">
+<title>中1数学カード</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0 auto;font-family:-apple-system,"Hiragino Sans",system-ui,sans-serif;background:#fff7ed;color:#0f172a;
+ padding:calc(12px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));max-width:520px}
+button{font-family:inherit;font-size:18px;border:0;border-radius:14px;min-height:54px;padding:0 16px;background:#fde7d3;color:#0f172a;touch-action:manipulation}
+.main{width:100%;background:#c2410c;color:#fff;font-weight:bold;min-height:66px;font-size:21px}
+.full{width:100%}.ghost{background:none;color:#57534e;font-size:15px;min-height:40px}
+.hintb{background:#fef3c7;color:#92400e;font-size:16px;min-height:46px;width:100%;margin:4px 0}
+.box{background:#fff;border-radius:18px;padding:16px 18px;margin:12px 0;box-shadow:0 1px 3px #0001}
+.center{text-align:center}.dim{color:#78716c;font-size:14px}
+.bar{height:10px;background:#e7e5e4;border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;background:#c2410c;transition:width .3s}
+.unit{font-size:13px;color:#c2410c;font-weight:bold}.ttl{font-size:21px;font-weight:bold;margin:2px 0 8px}
+.q{font-size:20px;line-height:1.7}
+.ch{display:block;width:100%;margin:10px 0;min-height:60px;font-size:21px;background:#fff;border:2px solid #d6d3d1;text-align:left;padding:8px 16px}
+.ch.off{opacity:.25}.ok{background:#bbf7d0!important;border-color:#16a34a!important}.ng{background:#fecaca!important;border-color:#dc2626!important}
+.tip{background:#fff1e6;border-radius:12px;padding:10px 14px;margin:10px 0;font-weight:bold;color:#9a3412}
+.steps{font-size:20px;line-height:1.9;padding-left:6px;border-left:3px solid #fdba74}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.85em;line-height:1.1;margin:0 2px}.fr span:first-child{border-bottom:1.5px solid currentColor;padding:0 2px}
+.big3{display:flex;justify-content:space-around;text-align:center}.big3 b{display:block;font-size:30px;color:#c2410c}
+.note{background:#fef9c3;border-left:5px solid #eab308;border-radius:8px;padding:10px 14px;margin:12px 0;font-size:15px}
+.li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #e7e5e4}
+.lv{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:15px}.lv span{width:120px;flex:none}.lv .bar{flex:1}.lv b{width:60px;text-align:right}
+.mk{font-size:15px;white-space:nowrap}
+select{font-size:17px;padding:8px;border-radius:10px;border:1px solid #a8a29e;background:#fff;max-width:100%}
+label{display:block;margin:14px 0 6px;font-weight:bold}h2{margin:4px 0;font-size:20px}h3{margin:16px 0 4px;font-size:16px}
+svg{display:block;margin:8px auto}
+</style></head><body>
+<div id="app"></div>
+<script>
+// ===== 表記のための小さな道具 =====
+const X="𝑥",Y="𝑦",A="𝑎";
+const F=(n,d)=>`<span class="fr"><span>${n}</span><span>${d}</span></span>`;
+const neg=n=>n<0?"−"+Math.abs(n):""+n;
+const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);
+function frac(n,d){if(d<0){n=-n;d=-d}const g=gcd(n,d)||1;n/=g;d/=g;return d===1?neg(n):(n<0?"−":"")+F(Math.abs(n),d)}
+function lin(k,m){let s=k===0?"":(k===1?"":k===-1?"−":neg(k))+X;if(m)s+=(s?(m<0?"−":"+"):(m<0?"−":""))+Math.abs(m);return s||"0"}
+const r=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pickNZ=(a,b,ex=[])=>{let v;do{v=r(a,b)}while(v===0||ex.includes(v));return v};
+// ===== カード（重要事項カード 中1数学 10〜39番） =====
+const UNITS={2:"2 文字と式",3:"3 1次方程式",4:"4 比例と反比例",5:"5 平面図形",6:"6 空間図形",7:"7 データの活用"};
+const GRID=`<svg width="170" height="140" viewBox="0 0 170 140">${[0,1,2,3,4,5].map(i=>`<line x1="${20+i*25}" y1="10" x2="${20+i*25}" y2="110" stroke="#cbd5e1"/>`).join("")}${[0,1,2,3,4].map(i=>`<line x1="20" y1="${10+i*25}" x2="145" y2="${10+i*25}" stroke="#cbd5e1"/>`).join("")}<line x1="20" y1="110" x2="160" y2="110" stroke="#334155"/><line x1="20" y1="110" x2="20" y2="2" stroke="#334155"/><text x="8" y="124" font-size="12">O</text><text x="160" y="124" font-size="12">${X}</text><text x="24" y="10" font-size="12">${Y}</text><text x="92" y="128" font-size="12">3</text><text x="6" y="64" font-size="12">2</text><circle cx="95" cy="60" r="4"/><text x="100" y="56" font-size="13">A</text></svg>`;
+const HYP=`<svg width="150" height="130" viewBox="-75 -65 150 130"><line x1="-70" y1="0" x2="70" y2="0" stroke="#334155"/><line x1="0" y1="-60" x2="0" y2="60" stroke="#334155"/><path d="M8,-58 Q14,-10 66,-6" fill="none" stroke="#c2410c" stroke-width="2.5"/><path d="M-8,58 Q-14,10 -66,6" fill="none" stroke="#c2410c" stroke-width="2.5"/><text x="62" y="14" font-size="12">${X}</text><text x="4" y="-54" font-size="12">${Y}</text><text x="-12" y="14" font-size="12">O</text></svg>`;
+const CARDS=[
+{id:"10",no:10,u:2,t:"1次式のたし算・ひき算",q:`5${X}+2−${X}−3 の計算をすると？`,o:[`4${X}−1`,`3${X}`],a:0,tip:`${X}どうし、数どうしで計算！`,s:[`5${X}+2−${X}−3`,`=5${X}−${X}+2−3　（文字の項と数の項に整理）`,`=4${X}−1`],gen:g10},
+{id:"11",no:11,u:2,t:"かっこのついた計算",q:`(2${X}+5)−(${X}+1) のかっこをはずすと？`,o:[`2${X}+5−${X}+1`,`2${X}+5−${X}−1`],a:1,tip:"(　)の前の − には注意！",s:[`(2${X}+5)−(${X}+1)　（符号を変えて( )をはずす）`,`=2${X}+5−${X}−1`,`=${X}+4`],gen:g11},
+{id:"12",no:12,u:2,t:"分配法則",q:`−2(${X}+3) の計算をすると？`,o:[`−2${X}+3`,`−2${X}+6`,`−2${X}−6`],a:2,tip:`${A}(b+c)=${A}b+${A}c　すべてにかける`,s:[`−2(${X}+3)`,`=−2×${X}+(−2)×3`,`=−2${X}−6`],gen:g12},
+{id:"13",no:13,u:2,t:"不等式",q:`「ある数${X}の2倍が3より小さい」ことを表している式は？`,o:[`2${X}＞3`,`2${X}＝3`,`2${X}＜3`],a:2,tip:"「大きい」「小さい」→ ＜ ＞",s:[`${X}の2倍 → ${X}×2 は 2${X} と表す`,`2${X}＞3 … ${X}の2倍は3より大きい`,`2${X}＝3 … ${X}の2倍は3と等しい`,`2${X}＜3 … ${X}の2倍は3より小さい`]},
+{id:"14",no:14,u:3,t:"方程式の解き方(1)",q:`方程式 ${X}−3=−2 を解くと？`,o:[`${X}=1`,`${X}=−5`],a:0,tip:`左辺に${X}、右辺に数を移項`,s:[`${X}−3=−2`,`${X}=−2+3　（−3の符号を変えて移す＝移項）`,`${X}=1`],gen:g14},
+{id:"15",no:15,u:3,t:"方程式の解き方(2)",q:`方程式 3${X}−5=4 を解くと？`,o:[`${X}=3`,`${X}=−${F(1,3)}`],a:0,tip:"解き方の手順を覚えよう",s:[`3${X}−5=4`,`3${X}=4+5　（移項）`,`3${X}=9　（右辺を計算）`,`${X}=3　（${X}の係数3でわる）`],gen:g15},
+{id:"16",no:16,u:3,t:"比例式",q:`比例式 ${A}:b=c:d と同じことを表している式は？`,o:[`${A}d=bc`,`${A}c=bd`],a:0,tip:"比例式の性質を覚えよう！",s:[`${A}:b=c:d ならば`,`外側どうしの積 ${A}d ＝ 内側どうしの積 bc`,`${A}d=bc`]},
+{id:"17",no:17,u:3,t:"小数をふくむ方程式",q:`方程式 0.3${X}+2=0.5 の係数を整数になおすと？`,o:[`3${X}+2=5`,`3${X}+20=5`],a:1,tip:"両辺に10をかける（整数にも10をかける）",s:[`0.3${X}×10+2×10=0.5×10`,`3${X}+20=5`,`3${X}=5−20`,`3${X}=−15`,`${X}=−5`],gen:g17},
+{id:"18",no:18,u:3,t:"分数をふくむ方程式",q:`方程式 ${F(X,4)}=3+${F(X,5)} の係数を整数になおすと？`,o:[`5${X}=3+4${X}`,`5${X}=60+4${X}`],a:1,tip:"両辺に分母の最小公倍数をかける",s:[`${F(X,4)}×20=3×20+${F(X,5)}×20　（整数にも20をかける）`,`5${X}=60+4${X}`,`5${X}−4${X}=60`,`${X}=60`],gen:g18},
+{id:"19a",no:19,u:4,t:"比例の式",q:"比例を表す式は？",o:[`${Y}=${A}${X}`,`${Y}=${X}+${A}`,`${Y}=${F(A,X)}`,`${Y}=${A}−${X}`],a:0,tip:`比例 ⇒ ${Y}=${A}${X}　反比例 ⇒ ${Y}=${F(A,X)}`,s:[`比例定数を${A}として`,`比例の式は ${Y}=${A}${X}`,`反比例の式は ${Y}=${F(A,X)}（積が一定なので ${X}${Y}=${A} とも表す）`]},
+{id:"19b",no:19,u:4,t:"反比例の式",q:"反比例を表す式は？",o:[`${Y}=${A}${X}`,`${Y}=${X}+${A}`,`${Y}=${F(A,X)}`,`${Y}=${A}−${X}`],a:2,tip:`比例 ⇒ ${Y}=${A}${X}　反比例 ⇒ ${Y}=${F(A,X)}`,s:[`比例定数を${A}として`,`比例の式は ${Y}=${A}${X}`,`反比例の式は ${Y}=${F(A,X)}（積が一定なので ${X}${Y}=${A} とも表す）`]},
+{id:"20",no:20,u:4,t:"比例の式の求め方",q:`${Y}は${X}に比例し、${X}=4 のとき ${Y}=−8 です。${Y}を${X}の式で表すと？`,o:[`${Y}=−${F(1,2)}${X}`,`${Y}=−2${X}`],a:1,tip:`${Y}=${A}${X} の式に ${X}と${Y}の値を代入`,s:[`${Y}=${A}${X} に ${X}=4、${Y}=−8 を代入`,`−8=${A}×4 より ${A}=−2`,`求める式は ${Y}=−2${X}`],gen:g20},
+{id:"21",no:21,u:4,t:"反比例の式の求め方",q:`${Y}は${X}に反比例し、${X}=4 のとき ${Y}=−8 です。${Y}を${X}の式で表すと？`,o:[`${Y}=−2${X}`,`${Y}=−${F(32,X)}`],a:1,tip:`${Y}=${F(A,X)} の式に ${X}と${Y}の値を代入`,s:[`${Y}=${F(A,X)} に ${X}=4、${Y}=−8 を代入`,`−8=${F(A,4)} より ${A}=−32`,`求める式は ${Y}=−${F(32,X)}`],gen:g21},
+{id:"22",no:22,u:4,t:"座標",q:`下の点Aの座標を正しく表しているのは？${GRID}`,o:["(3, 2)","(2, 3)"],a:0,tip:`(${X}座標, ${Y}座標) の順に書く`,s:[`Aから真下にたどると ${X}=3（${X}座標）`,`Aから左にたどると ${Y}=2（${Y}座標）`,`A(3, 2)`]},
+{id:"23",no:23,u:4,t:"比例・反比例のグラフ",q:`下のグラフの形になる関係は？${HYP}`,o:["比例","反比例"],a:1,tip:"グラフの形を覚えておこう！",s:["比例のグラフ … 原点を通る直線","反比例のグラフ … なめらかな2つの曲線（双曲線）"]},
+{id:"24",no:24,u:5,t:"「∥」と「⊥」",q:"「辺ABとCDが平行である」ことを記号で表すと？",o:["AB∥CD","AB⊥CD"],a:0,tip:"平行 … ∥　垂直 … ⊥",s:["平行な2直線を平行線という","平行なときは「∥」で表す → AB∥CD","垂直なときは「⊥」で表す"]},
+{id:"25a",no:25,u:5,t:"図形の移動（回転移動）",q:"ある点（回転の中心）を中心にして、図形を回転させる移動は？",o:["平行移動","対称移動","回転移動"],a:2,tip:"移動の性質を覚えておこう！",s:["平行移動 … 一定の方向に一定の長さだけずらす","対称移動 … ある直線（対称の軸）で折り返す","回転移動 … ある点（回転の中心）で回転させる"]},
+{id:"25b",no:25,u:5,t:"図形の移動（対称移動）",q:"ある直線（対称の軸）で、図形を折り返す移動は？",o:["平行移動","対称移動","回転移動"],a:1,tip:"移動の性質を覚えておこう！",s:["平行移動 … 一定の方向に一定の長さだけずらす","対称移動 … ある直線（対称の軸）で折り返す","回転移動 … ある点（回転の中心）で回転させる"]},
+{id:"26",no:26,u:5,t:"作図(1)",q:"線分ABの両端A、Bから同じ半径の円をかき、その2つの交点を結んだ直線ℓを、線分ABの何という？",o:["垂線","垂直二等分線"],a:1,tip:"垂直二等分線 … 両端からの距離が等しい",s:["線分ABの中点を通り、ABに垂直な直線を垂直二等分線という","垂直二等分線上の点は、AとBからの距離が等しい","点Pから直線への垂線の作図とは、ちがう作図"]},
+{id:"27",no:27,u:5,t:"作図(2)",q:"30°を表す作図は、まず正三角形をかいて、その1つの角にどんな作図をする？",o:["角の二等分線の作図","垂直二等分線の作図"],a:0,tip:"角度によっては作図でかける",s:["正三角形の1つの角は 60°","60°の角の二等分線をかく","60°÷2＝30°"]},
+{id:"28",no:28,u:5,t:"おうぎ形",q:`半径が r、中心角が ${A}°のおうぎ形の弧の長さ ℓ を求める式は？`,o:[`2πr×${F(A,360)}`,`πr²×${F(A,360)}`],a:0,tip:`おうぎ形 … 円周や円の面積の ${F(A,360)} 倍`,s:[`弧の長さ ℓ＝2πr×${F(A,360)}　（円周の ${F(A,360)}）`,`面積 S＝πr²×${F(A,360)}　（円の面積の ${F(A,360)}）`]},
+{id:"29a",no:29,u:6,t:"立体の名前",q:"底面が四角形で、側面が長方形の立体は？",o:["四角柱","四角錐","三角錐"],a:0,tip:"側面の形で、柱か錐かを考えよう",s:["側面が長方形 → 柱（角柱）","側面が三角形 → 錐（角錐）","底面が四角形 → 四角〜"]},
+{id:"29b",no:29,u:6,t:"立体の名前",q:"底面が四角形で、側面が三角形の立体は？",o:["四角柱","四角錐","三角錐"],a:1,tip:"側面の形で、柱か錐かを考えよう",s:["側面が長方形 → 柱（角柱）","側面が三角形 → 錐（角錐）","底面が四角形 → 四角〜"]},
+{id:"30",no:30,u:6,t:"投影図",q:"立面図（正面から見た図）が三角形、平面図（真上から見た図）が対角線の入った四角形の立体は？",o:["四角錐","三角錐","四角柱"],a:0,tip:"投影図 … 立面図と平面図で考えよう",s:["立面図（正面から見た図）… 三角形 → 錐","平面図（真上から見た図）… 長方形 → 底面が四角形","立体 … 四角錐"]},
+{id:"31",no:31,u:6,t:"空間内の辺と辺",q:"直方体ABCD-EFGH で、辺ABと辺CGの位置関係は？",o:["平行","垂直","ねじれの位置"],a:2,tip:"交わらず、平行でもなければ…",s:["空間内で、2直線が交わらず、平行でもないとき","「ねじれの位置にある」という","ABとCGは交わらず、平行でもない"]},
+{id:"32",no:32,u:6,t:"円柱の表面積",q:"円柱の展開図で、側面の形は？",o:["長方形","おうぎ形","円"],a:0,tip:"角柱や円柱の表面積＝側面積＋底面積×2",s:["円柱の展開図 … 側面は長方形、底面の円が2つ","長方形の横の長さ＝底面の円周"]},
+{id:"33",no:33,u:6,t:"円錐の表面積",q:"円錐の展開図で、側面の形は？",o:["長方形","おうぎ形","円"],a:1,tip:"角錐や円錐の表面積＝側面積＋底面積",s:["円錐の展開図 … 側面はおうぎ形、底面の円は1つ","おうぎ形の弧の長さ＝底面の円周"]},
+{id:"34",no:34,u:6,t:"角錐・円錐の体積",q:"角錐や円錐の体積は、底面積に高さをかけてから、さらに何倍する？",o:[`${F(1,2)}倍`,`${F(1,3)}倍`,"3倍"],a:1,tip:"錐の体積は、柱の体積の3分の1",s:[`角錐・円錐の体積＝${F(1,3)}×底面積×高さ`,"（底面積×高さ は角柱や円柱の体積）"]},
+{id:"35",no:35,u:6,t:"球",q:"4πr² の式は、半径 r の球の何を求める式？",o:["表面積","体積"],a:0,tip:`球の公式 … 4πr²　${F(4,3)}πr³`,s:["表面積 … 4πr²",`体積 … ${F(4,3)}πr³`]},
+{id:"36",no:36,u:7,t:"範囲",q:"データの傾向を考えるときに、データの最大値と最小値の差を何という？",o:["範囲（レンジ）","階級値"],a:0,tip:"範囲 … (最大値)−(最小値)",s:["範囲＝最大値−最小値","階級値 … 階級の真ん中の値","代表値 … 平均値・中央値・最頻値"]},
+{id:"37",no:37,u:7,t:"ヒストグラム",q:"度数分布を、長方形（柱）を並べて表したグラフを何という？",o:["度数折れ線","ヒストグラム"],a:1,tip:"ヒストグラム … 柱状グラフのこと",s:["ヒストグラム … 柱状グラフ","度数折れ線（度数分布多角形）… ヒストグラムの各長方形の上の辺の中点を結んだもの"]},
+{id:"38",no:38,u:7,t:"相対度数",q:"（その階級の度数）÷（度数の合計）の式は、何を求める式？",o:["相対度数","平均値"],a:0,tip:"比較するときは相対度数",s:["相対度数 … ある階級の度数の、全体に対する割合","累積相対度数 … 最初の階級からある階級までの相対度数の合計"]},
+{id:"39",no:39,u:7,t:"確率の考え方",q:"びんのふたを投げる実験を1000回したら、表が出た回数は420回でした。表が出る確率はいくつと考えられる？",o:["0.42","420"],a:0,tip:"確率 … 起こりやすさの程度を表す数",s:["回数を増やすと、相対度数は一定の値に近づく","その値を、そのことがらの起こる確率と考える","420÷1000＝0.42"],gen:g39}
+];
+// ===== 数字を変えた類題（②の段階・復習で使う） =====
+function g10(){const a=r(3,8),c=r(1,a-1),b=r(1,7),d=r(1,7);const k=a-c,m=b-d;
+ return {q:`${a}${X}+${b}−${c===1?"":c}${X}−${d} の計算をすると？`,o:[lin(k,m),lin(a+c,m),lin(k,b+d)],a:0,s:[`=${a}${X}−${c===1?"":c}${X}+${b}−${d}　（${X}どうし、数どうし）`,`=${lin(k,m)}`]}}
+function g11(){const a=r(2,6),b=r(1,8),c=r(1,a-1),d=r(1,8);const C=c===1?"":c;
+ return {q:`(${a}${X}+${b})−(${C}${X}+${d}) のかっこをはずすと？`,o:[`${a}${X}+${b}−${C}${X}+${d}`,`${a}${X}+${b}−${C}${X}−${d}`],a:1,s:[`−( )は、中の符号をすべて変えてはずす`,`=${a}${X}+${b}−${C}${X}−${d}`,`=${lin(a-c,b-d)}`]}}
+function g12(){const k=r(2,6),m=r(1,7);
+ return {q:`−${k}(${X}+${m}) の計算をすると？`,o:[`−${k}${X}+${m}`,`−${k}${X}+${k*m}`,`−${k}${X}−${k*m}`],a:2,s:[`=−${k}×${X}+(−${k})×${m}`,`=−${k}${X}−${k*m}`]}}
+function g14(){const a=r(2,9),b=pickNZ(-6,6);
+ return {q:`方程式 ${X}−${a}=${neg(b)} を解くと？`,o:[`${X}=${neg(b+a)}`,`${X}=${neg(b-a)}`],a:0,s:[`${X}=${neg(b)}+${a}　（−${a}を移項すると +${a}）`,`${X}=${neg(b+a)}`]}}
+function g15(){let a,s,b,c;do{a=r(2,5);s=pickNZ(-4,6);b=r(1,9);c=a*s-b}while((c-b)%a===0&&(c-b)/a===s);
+ return {q:`方程式 ${a}${X}−${b}=${neg(c)} を解くと？`,o:[`${X}=${neg(s)}`,`${X}=${frac(c-b,a)}`],a:0,s:[`${a}${X}=${neg(c)}+${b}　（移項）`,`${a}${X}=${neg(c+b)}`,`${X}=${neg(s)}　（${a}でわる）`]}}
+function g17(){const k=r(2,9),m=r(1,6),n=r(1,9);
+ return {q:`方程式 0.${k}${X}+${m}=0.${n} の係数を整数になおすと？`,o:[`${k}${X}+${m}=${n}`,`${k}${X}+${m*10}=${n}`],a:1,s:[`両辺に10をかける（整数の${m}にも10をかける）`,`0.${k}${X}×10+${m}×10=0.${n}×10`,`${k}${X}+${m*10}=${n}`]}}
+function g18(){const P=[[2,3],[3,4],[4,5],[2,5],[3,5]][r(0,4)],p=P[0],q=P[1],L=p*q,c=r(1,5);
+ return {q:`方程式 ${F(X,p)}=${c}+${F(X,q)} の係数を整数になおすと？`,o:[`${q}${X}=${c}+${p}${X}`,`${q}${X}=${c*L}+${p}${X}`],a:1,s:[`分母${p}と${q}の最小公倍数 ${L} を両辺にかける（整数にも）`,`${q}${X}=${c*L}+${p}${X}`,`${X}=${c*L/(q-p)}`]}}
+function g20(){const a=pickNZ(-4,4,[1]),s=[2,3,4,-2][r(0,3)],y=a*s;
+ return {q:`${Y}は${X}に比例し、${X}=${neg(s)} のとき ${Y}=${neg(y)} です。${Y}を${X}の式で表すと？`,o:[`${Y}=${a===-1?"−":neg(a)}${X}`,`${Y}=${frac(1,a)}${X}`],a:0,s:[`${Y}=${A}${X} に代入：${neg(y)}=${A}×(${neg(s)})`,`${A}=${neg(a)}`,`${Y}=${a===-1?"−":neg(a)}${X}`]}}
+function g21(){const s=[2,3,4][r(0,2)],t=pickNZ(-6,6),k=s*t;
+ return {q:`${Y}は${X}に反比例し、${X}=${s} のとき ${Y}=${neg(t)} です。${Y}を${X}の式で表すと？`,o:[`${Y}=${frac(t,s)}${X}`,`${Y}=${k<0?"−":""}${F(Math.abs(k),X)}`],a:1,s:[`${Y}=${F(A,X)} に代入：${neg(t)}=${F(A,s)}`,`${A}=${neg(t)}×${s}=${neg(k)}`,`${Y}=${k<0?"−":""}${F(Math.abs(k),X)}`]}}
+function g39(){const n=r(25,75)*10;
+ return {q:`ある実験を1000回したら、ことがらAが${n}回起こりました。Aが起こる確率はいくつと考えられる？`,o:[`${n/1000}`,`${n}`],a:0,s:[`${n}÷1000＝${n/1000}`]}}
+// ===== 保存 =====
+const KEY="math1-cards-v1";let mem=null;
+function loadS(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return mem}}
+function saveS(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){mem=S}}
+let S=loadS()||{};S.c=S.c||{};S.days=S.days||[];S.log=S.log||{};S.set=S.set||{newPerDay:3,unit:""};
+const GAP=[0,2,4,8,16,32];
+const $=()=>document.getElementById("app");
+const dstr=(d=new Date())=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const addDays=(s,n)=>{const d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return dstr(d)};
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const st=k=>S.c[k.id];const lvOf=k=>st(k)?st(k).lv:0;
+const cards=()=>S.set.unit?CARDS.filter(k=>""+k.u===S.set.unit):CARDS;
+function streak(){let n=0,d=dstr();const ds=new Set(S.days);if(!ds.has(d))d=addDays(d,-1);while(ds.has(d)){n++;d=addDays(d,-1)}return n}
+// ①カードの問題 ②数字を変えた類題（ないカードは同じ問題をもう一度）。②まで正解したら、間をあけて復習
+function grade(k,stage,ok,hinted){const t=dstr();const c=S.c[k.id]||(S.c[k.id]={lv:0,box:0,first:t,e:0,h:0});
+ const L=S.log[t]||(S.log[t]={ok:0,ng:0,hint:0});if(!S.days.includes(t))S.days.push(t);
+ if(ok&&!hinted){L.ok++;c.lv=Math.max(c.lv,stage);c.f=false;if(stage>=2&&c.lv>=2){c.box=Math.min(5,(c.box||0)+1);c.due=addDays(t,GAP[c.box])}else c.due=addDays(t,1)}
+ else if(ok){L.hint++;c.h++;c.due=addDays(t,1)}
+ else{L.ng++;c.e++;c.f=true;c.box=0;c.due=addDays(t,1);if(c.lv>=2)c.lv=1}
+ saveS()}
+function plan(){const t=dstr(),cs=cards();const due=cs.filter(k=>st(k)&&st(k).due<=t);
+ const todayNew=Object.values(S.c).filter(c=>c.first===t).length;const bonus=(S.bonus&&S.bonus.date===t)?S.bonus.n:0;
+ const rest=cs.filter(k=>!st(k));return {due,fresh:rest.slice(0,Math.max(0,(S.set.newPerDay||3)+bonus-todayNew)),left:rest.length}}
+// ===== ホーム =====
+let ses=null;
+function home(){ses=null;const p=plan(),cs=CARDS.filter(k=>st(k)),ok2=cs.filter(k=>lvOf(k)>=2).length;const rev=Math.min(p.due.length,10),any=rev+p.fresh.length>0;
+ $().innerHTML=`<h1 style="font-size:20px;margin:6px 0 2px">中1数学カード</h1><div class="dim">選ぶ → 解説で確かめる → ノートに書く</div>
+ <div class="box"><div class="big3"><div><b>${cs.length}</b><span class="dim">はじめた</span></div><div><b>${ok2}</b><span class="dim">できる</span></div><div><b>${streak()}</b><span class="dim">日つづけた</span></div></div>
+ <div class="bar" style="margin-top:14px"><i style="width:${cs.length/CARDS.length*100}%"></i></div><div class="dim center" style="margin-top:4px">全${CARDS.length}問（カード10〜39）</div></div>
+ ${any?`<button class="main" onclick="start()">今日の学習をはじめる</button><div class="dim center" style="margin-top:8px">復習 ${rev}問 ＋ 新しいカード ${p.fresh.length}問</div>`
+ :`<div class="box center"><div style="font-size:40px">🎉</div><b>今日の分はおわり！</b><div class="dim">つづきは明日。</div></div>${p.left?`<button class="full" onclick="more()">あと3問すすめる</button>`:""}`}
+ <button class="full" style="margin-top:22px" onclick="record()">📒 学習の記録を見る</button>
+ <div class="center" style="margin-top:6px"><button class="ghost" onclick="settings()">⚙ 設定</button></div><div class="dim center">版 1</div>`}
+function more(){const t=dstr();S.bonus={date:t,n:((S.bonus&&S.bonus.date===t)?S.bonus.n:0)+3};saveS();start()}
+// ===== 学習の流れ =====
+function start(list){const p=plan();const src=list?shuf(list):[...shuf(p.due).slice(0,10),...p.fresh];const tasks=[];
+ src.filter(k=>lvOf(k)>0).forEach(k=>tasks.push({k,stage:2}));
+ const fresh=src.filter(k=>lvOf(k)===0);fresh.forEach(k=>tasks.push({k,stage:1}));
+ if(!tasks.length){home();return}ses={tasks,n:tasks.length,done:0,wrong:[]};next()}
+function next(){if(!ses)return;if(!ses.tasks.length){end();return}const t=ses.cur=ses.tasks.shift();t.hint=false;ses.locked=false;
+ const k=t.k;let pr={q:k.q,o:k.o,a:k.a,s:k.s};if(t.stage===2&&k.gen&&!t.retry)pr=k.gen();else if(t.retry&&t.pr)pr=t.pr;
+ t.pr=pr;const order=shuf(pr.o.map((_,i)=>i));ses.order=order;
+ $().innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><span class="unit">${UNITS[k.u]}　カード${k.no}${t.stage===2?(k.gen?"　（数字を変えた問題）":"　（もう一度）"):""}</span><button class="ghost" onclick="home()">やめる</button></div>
+ <div class="bar"><i style="width:${ses.done/ses.n*100}%"></i></div>
+ <div class="box"><div class="ttl">${k.t}</div><div class="q">${pr.q}</div></div>
+ <div id="hint"><button class="hintb" onclick="hint()">💡 ヒントを見る</button></div>
+ ${order.map((oi,i)=>`<button class="ch" onclick="ans(${i})">${"①②③④"[i]}　${pr.o[oi]}</button>`).join("")}`}
+function hint(){if(!ses||ses.locked)return;const t=ses.cur;t.hint=true;document.getElementById("hint").innerHTML=`<div class="tip">🐟 ${t.k.tip}</div>`;
+ const bs=[...document.querySelectorAll(".ch")];if(bs.length>=3){const i=ses.order.findIndex((oi,j)=>oi!==t.pr.a&&!bs[j].disabled);if(i>=0){bs[i].classList.add("off");bs[i].disabled=true}}}
+function ans(i){if(!ses||ses.locked)return;ses.locked=true;const t=ses.cur,k=t.k,ok=ses.order[i]===t.pr.a;
+ [...document.querySelectorAll(".ch")].forEach((b,j)=>{if(ses.order[j]===t.pr.a)b.classList.add("ok");else if(j===i)b.classList.add("ng")});
+ if(!t.retry)grade(k,t.stage,ok,t.hint);
+ if(!ok){if(!t.retry)ses.wrong.push(k);ses.tasks.splice(Math.min(2,ses.tasks.length),0,{k,stage:t.stage,retry:true,pr:t.pr});ses.n++}
+ const my=ses;setTimeout(()=>{if(ses!==my)return;explain(t,ok)},ok?500:800)}
+function explain(t,ok){const k=t.k,pr=t.pr;
+ $().innerHTML=`<div class="unit">${UNITS[k.u]}　カード${k.no}</div>
+ <div class="box center" style="font-size:22px;font-weight:bold;color:${ok?"#15803d":"#b91c1c"}">${ok?(t.hint?"⭕ 正解（ヒントあり）":"⭕ 正解！"):"❌ おしい！"}</div>
+ <div class="box"><div class="dim">こたえ</div><div class="q" style="font-weight:bold">${pr.o[pr.a]}</div>
+ <div class="tip">🐟 ${k.tip}</div><div class="steps">${pr.s.map(x=>`<div>${x}</div>`).join("")}</div></div>
+ ${ok?"":`<div class="note">✏️ 解説を見ながら、ノートに式を書き写そう。あとでもう一度出ます。</div>`}
+ <button class="main" onclick="ses.done++;next()">次へ</button>`}
+function end(){const u=[...new Map(ses.wrong.map(k=>[k.id,k])).values()],n=ses.n;ses=null;const p=plan();
+ $().innerHTML=`<div class="box center"><div style="font-size:48px">🎉</div><h2>おつかれさま！</h2><div>${streak()}日つづいています</div></div>
+ ${u.length?`<div class="note"><b>✏️ 自学ノートに書こう</b><br>まちがえた問題を、問題 → 解き方 → 答え の順に書いて、もう一度自分で解こう。<br><br>${u.map(k=>`カード${k.no}　${k.t}`).join("<br>")}</div>`:`<div class="note">ぜんぶ正解！今日のカードの「🐟ポイント」をノートに1行ずつ書いておこう。</div>`}
+ ${p.due.length?`<button class="full" style="margin-bottom:10px" onclick="start()">残りの復習 ${p.due.length}問をやる</button>`:(p.left?`<button class="full" style="margin-bottom:10px" onclick="more()">あと3問すすめる</button>`:"")}
+ <button class="main" onclick="home()">おわる</button>`}
+// ===== 学習の記録（ポートフォリオ） =====
+function mark(k){const c=st(k);if(!c)return `<span class="mk dim">まだ</span>`;return `<span class="mk">${c.lv>=1?"①⭕":"①・"} ${c.lv>=2?"②⭕":"②・"}</span>`}
+function record(){const cs=CARDS.filter(k=>st(k)),wk=CARDS.filter(k=>st(k)&&st(k).f);
+ const days=Object.keys(S.log).sort().slice(-14).reverse();
+ $().innerHTML=`<button class="ghost" onclick="home()">◀ もどる</button><h2>📒 学習の記録</h2>
+ <div class="box"><b>単元ごとにできるようになった問題</b>${Object.entries(UNITS).map(([u,nm])=>{const all=CARDS.filter(k=>""+k.u===u),ok=all.filter(k=>lvOf(k)>=2).length;return `<div class="lv"><span>${nm}</span><div class="bar"><i style="width:${ok/all.length*100}%"></i></div><b>${ok}/${all.length}</b></div>`}).join("")}
+ <div class="dim">「できる」＝カードの問題（①）と、数字を変えた問題またはもう一度（②）を、ヒントなしで正解。</div></div>
+ ${wk.length?`<button class="main" style="min-height:58px;font-size:18px" onclick="start(CARDS.filter(k=>st(k)&&st(k).f))">いま つまずいている ${wk.length}問を練習する</button>`:""}
+ ${wk.length?`<h3>つまずいている問題</h3><div class="box" style="padding:6px 16px">${wk.map(k=>`<div class="li"><div style="flex:1"><b>カード${k.no}</b>　${k.t}<div class="dim">まちがい${st(k).e}回　ヒント${st(k).h}回</div></div>${mark(k)}</div>`).join("")}</div>`:""}
+ ${days.length?`<h3>日ごとの記録</h3><div class="box" style="padding:6px 16px">${days.map(d=>{const l=S.log[d];return `<div class="li"><div style="flex:1">${d.slice(5).replace("-","/")}</div><div class="dim">正解${l.ok}　ヒント${l.hint}　まちがい${l.ng}</div></div>`}).join("")}</div>`:""}
+ <h3>カードごとの記録</h3><div class="box" style="padding:6px 16px">${CARDS.map(k=>`<div class="li"><div style="flex:1"><b>${k.no}</b>　${k.t}${st(k)?`<div class="dim">まちがい${st(k).e}回　ヒント${st(k).h}回</div>`:""}</div>${mark(k)}</div>`).join("")}</div>
+ <button class="full" onclick="copyRec()">記録を文字でコピーする</button><div id="cp" class="dim center" style="margin-top:6px"></div>`}
+function copyRec(){const plain=s=>s.replace(/<[^>]+>/g,"");
+ const txt=`【中1数学カード 学習の記録 ${dstr()}】\nはじめた ${CARDS.filter(k=>st(k)).length}問／できる ${CARDS.filter(k=>lvOf(k)>=2).length}問／つづけた日数 ${streak()}日\n`+Object.entries(UNITS).map(([u,nm])=>{const all=CARDS.filter(k=>""+k.u===u);return `${nm}：${all.filter(k=>lvOf(k)>=2).length}/${all.length}`}).join("\n")+`\nつまずき：`+(CARDS.filter(k=>st(k)&&st(k).f).map(k=>`カード${k.no} ${plain(k.t)}（まちがい${st(k).e}回）`).join("、")||"なし");
+ const done=m=>{const e=document.getElementById("cp");if(e)e.textContent=m};try{navigator.clipboard.writeText(txt).then(()=>done("コピーしました"),()=>done(txt))}catch(e){done(txt)}}
+// ===== 設定 =====
+function settings(){$().innerHTML=`<button class="ghost" onclick="home()">◀ もどる</button><h2>⚙ 設定</h2><div class="box">
+ <label>1日の新しいカード</label><select onchange="S.set.newPerDay=+this.value;saveS()">${[3,5].map(n=>`<option value="${n}" ${(S.set.newPerDay||3)===n?"selected":""}>${n}問</option>`).join("")}</select>
+ <label>単元</label><select onchange="S.set.unit=this.value;saveS()"><option value="">すべて</option>${Object.entries(UNITS).map(([u,nm])=>`<option value="${u}" ${S.set.unit===u?"selected":""}>${nm}</option>`).join("")}</select></div>
+ <div class="box" style="font-size:15px;line-height:1.7"><b>この進め方の考え方</b><br>・まず自分で答えを選ぶ（思い出す練習）<br>・すぐに解説で確かめる<br>・次の日に、数字を変えた問題で「わかった」を確かめる<br>・できた問題は、2日・4日・8日…と間をあけて復習<br>・まちがえた問題は、自学ノートに書き写して解き直す</div>`}
+home();
+</script></body></html>
