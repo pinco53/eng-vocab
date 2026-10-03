@@ -55,7 +55,7 @@ if(!S.v3){for(const c of Object.values(S.cards)){if(c.lv>=3){c.lv=2;c.box=0}}S.v
 const STAGE=["","① 単語を読む","② 短文を読む","③ 虫食いで書く","④ 並べ替えて書く"];
 const SHORT=["","読む","短文","虫食い","並べ替え"];
 const GAP=[0,2,4,8,16,32]; // ④まで進んだあとの復習の間隔（日）
-const RANGES=[["","すべて"],["1-38","カード1〜38（家族・身の回り・食事）"],["39-78","カード39〜78（動物・場所・時・曜日）"],["79-122","カード79〜122（月・季節・動詞）"],["123-158","カード123〜158（形容詞・疑問詞・前置詞）"]];
+const RANGES=[["","中1・中2 すべて"],["1","中1 重要単語カード（1〜158）"],["1:1-38","中1 カード1〜38（家族・身の回り・食事）"],["1:39-78","中1 カード39〜78（動物・場所・時・曜日）"],["1:79-122","中1 カード79〜122（月・季節・動詞）"],["1:123-158","中1 カード123〜158（形容詞・疑問詞・前置詞）"],["2","中2 英単語カード（1〜158）"],["2:1-40","中2 カード1〜40（abroad〜example）"],["2:41-80","中2 カード41〜80（excuse〜market）"],["2:81-120","中2 カード81〜120（meat〜set）"],["2:121-158","中2 カード121〜158（shall〜wrong）"]];
 const MAX_REVIEW=15;
 const $=()=>document.getElementById("app");
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -63,7 +63,7 @@ const dstr=(d=new Date())=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2
 const addDays=(s,n)=>{const d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return dstr(d)};
 const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 let all=[],words=[],ses=null,sp=null;
-function applyRange(){let r=S.settings.range;if(!RANGES.some(x=>x[0]===r))r=S.settings.range="";if(!r){words=all;return}const [a,b]=r.split("-").map(Number);words=all.filter(w=>w.no>=a&&w.no<=b)}
+function applyRange(){let r=S.settings.range;if(!RANGES.some(x=>x[0]===r))r=S.settings.range="";if(!r){words=all;return}const [d,rg]=r.split(":");const key=d==="2"?"no2":"no";if(!rg){words=all.filter(w=>w[key]);return}const [a,b]=rg.split("-").map(Number);words=all.filter(w=>w[key]>=a&&w[key]<=b)}
 const card=w=>S.cards[w.id];
 const lvOf=w=>card(w)?card(w).lv:0;
 // ===== 音 =====
@@ -93,13 +93,13 @@ function plan(){const t=dstr();
 // ===== ホーム =====
 function home(){ses=null;const p=plan(),cs=all.filter(w=>card(w)),wr=cs.filter(w=>lvOf(w)>=4).length;
  const rev=Math.min(p.due.length,MAX_REVIEW),any=rev+p.fresh.length>0;
- $().innerHTML=`<h1 style="font-size:20px;margin:6px 0 2px">中学英単語</h1><div class="dim">読む → 書く の順に、少しずつ。1日5分。</div>
+ $().innerHTML=`<h1 style="font-size:20px;margin:6px 0 2px">中学英単語</h1><div class="dim">読む → 書く の順に、少しずつ。1日5分。</div><div class="dim" style="margin-top:4px">範囲：${(RANGES.find(x=>x[0]===(S.settings.range||""))||RANGES[0])[1]}　<a href="#" onclick="settings();return false">変える</a></div>
  <div class="box"><div class="big3"><div><b>${cs.length}</b><span class="dim">はじめた</span></div><div><b>${wr}</b><span class="dim">書ける</span></div><div><b>${streak()}</b><span class="dim">日つづけた</span></div></div>
  <div class="bar" style="margin-top:14px"><i style="width:${all.length?cs.length/all.length*100:0}%"></i></div><div class="dim center" style="margin-top:4px">全${all.length}語</div></div>
  ${any?`<button class="main" onclick="start()">今日の学習をはじめる</button><div class="dim center" style="margin-top:8px">復習 ${rev}語 ＋ 新しい単語 ${p.fresh.length}語${p.due.length>rev?`（残り ${p.due.length-rev}語は次の回）`:""}</div>`
  :`<div class="box center"><div style="font-size:40px">🎉</div><b>今日の分はおわり！</b><div class="dim">また明日。つづきは明日出ます。</div></div>${p.left?`<button class="full" onclick="more()">あと5語すすめる</button>`:""}`}
  <button class="full" style="margin-top:22px" onclick="record()">📒 学習の記録を見る</button>
- <div class="center" style="margin-top:6px"><button class="ghost" onclick="settings()">⚙ 設定</button></div><div class="dim center">版 4</div>`}
+ <div class="center" style="margin-top:6px"><button class="ghost" onclick="settings()">⚙ 設定</button></div><div class="dim center">版 5</div>`}
 function more(){const t=dstr();S.bonus={date:t,n:((S.bonus&&S.bonus.date===t)?S.bonus.n:0)+5};saveS();start()}
 // ===== 学習の流れ =====
 const canSpell=w=>/^[A-Za-z' ]+$/.test(w.word)&&w.word.replace(/ /g,"").length<=12;
@@ -122,7 +122,7 @@ const hintBtn=`<button class="hintb full" style="margin:2px 0 4px" onclick="hint
 const later=(w,f)=>setTimeout(()=>{if(ses&&ses.cur&&ses.cur.w===w)f()},150);
 // 見る・聞く（はじめての単語）
 function intro(w){$().innerHTML=`${head("はじめての単語：見る・聞く")}
- <div class="box center"><div class="dim">${w.no?"カード "+w.no:""}</div><div class="word">${esc(w.word)}</div><div class="mean" style="margin-top:8px">${esc(w.meaning)}</div>
+ <div class="box center"><div class="dim">${w.no?"中1カード "+w.no:w.no2?"中2カード "+w.no2:""}</div><div class="word">${esc(w.word)}</div><div class="mean" style="margin-top:8px">${esc(w.meaning)}</div>
  <div><button style="margin:12px 0" onclick="play('${w.id}','w')">🔊 単語を聞く</button></div>
  ${w.phrase?`<div style="font-size:22px;font-weight:bold">${esc(w.phrase)}</div><div class="dim">${esc(w.phraseJa||"")}</div><div><button style="margin:8px 0 12px" onclick="play('${w.id}','p')">🔊 短文を聞く</button></div>`:""}
  ${w.example?`<div style="font-size:18px">${esc(w.example)}</div><div class="dim">${esc(w.exampleJa||"")}</div><div><button style="margin-top:8px" onclick="play('${w.id}','e')">🔊 文を聞く</button></div>`:""}</div>
@@ -230,7 +230,7 @@ function copyRec(){const g=groups(),cs=g.cs,cnt=k=>cs.filter(w=>lvOf(w)>=k).leng
 // ===== 設定 =====
 function settings(){$().innerHTML=`<button class="ghost" onclick="home()">◀ もどる</button><h2>⚙ 設定</h2><div class="box">
  <label>1日の新しい単語</label><select onchange="setv('newPerDay',+this.value)">${[5,10].map(n=>`<option value="${n}" ${(S.settings.newPerDay||5)===n?"selected":""}>${n}語</option>`).join("")}</select>
- <label>範囲（重要単語カードの番号）</label><select onchange="setv('range',this.value)">${RANGES.map(([v,l])=>`<option value="${v}" ${(S.settings.range||"")===v?"selected":""}>${l}</option>`).join("")}</select>
+ <label>範囲（どのカードを学ぶか）</label><select onchange="setv('range',this.value)">${RANGES.map(([v,l])=>`<option value="${v}" ${(S.settings.range||"")===v?"selected":""}>${l}</option>`).join("")}</select>
  <label>音声の速さ</label><select onchange="setv('slow',this.value==='1')"><option value="0" ${S.settings.slow?"":"selected"}>ふつう</option><option value="1" ${S.settings.slow?"selected":""}>ゆっくり</option></select></div>
  <div class="box"><b>この進め方の考え方</b><div style="font-size:15px;line-height:1.7;margin-top:6px">
  ・<b>読む → 書く</b>：ことばは、見てわかる力が先に育ち、自分で書く力はあとから育ちます。<br>
@@ -238,8 +238,8 @@ function settings(){$().innerHTML=`<button class="ghost" onclick="home()">◀ �
  ・<b>間をあけて復習</b>：1日・2日・4日…と間をあけてくり返します。<br>
  ・<b>ヒントは少しずつ減らす</b>：虫食い → 全部の文字、と手助けを減らします。<br>
  ・<b>すぐに答え合わせ</b>：まちがえたら、その場で正しい形を見て聞きます。</div></div>
- <div class="dim">新しい単語は、重要単語カード（中1英語）の番号順に出ます。記録はこのスマホの中に保存されます。</div>`}
+ <div class="dim">新しい単語は、カードの番号順に出ます（中1のあとに中2）。記録はこのスマホの中に保存されます。</div>`}
 function setv(k,v){S.settings[k]=v;saveS();if(k==="range")applyRange()}
-fetch("words.json?v=4").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{all=j;applyRange();home()})
+fetch("words.json?v=5").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{all=j;applyRange();home()})
  .catch(e=>{$().innerHTML='<div class="box">単語データを読み込めません：'+esc(e.message)+'</div>'});
 </script></body></html>
