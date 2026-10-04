@@ -317,7 +317,7 @@ function battleEnd(){
  <button class="p full" style="min-height:56px;margin-bottom:8px" onclick="startBattle()">⚔️ もう一度バトル</button>
  <button class="full" onclick="home()">ホームへ</button>`}
 
-fetch("words.json").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{
+fetch("words.json?v=2").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{
  allWords=j;byId=Object.fromEntries(j.map(w=>[w.id,w]));applyCat();home()})
  .catch(e=>{document.getElementById("app").innerHTML='<div class="card0">単語データを読み込めません：'+esc(e.message)+'</div>'});
 </script></body></html>
