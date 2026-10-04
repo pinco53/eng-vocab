@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="フォニックス">
+<meta http-equiv="Cache-Control" content="no-cache"><meta name="theme-color" content="#059669">
+<title>フォニックス（つづりと音のきまり）</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0 auto;font-family:-apple-system,"Hiragino Sans",system-ui,sans-serif;background:#ecfdf5;color:#0f172a;padding:calc(12px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));max-width:520px}
+button{font-family:inherit;font-size:18px;border:0;border-radius:14px;min-height:52px;padding:0 16px;background:#d1fae5;color:#0f172a}
+.main{width:100%;background:#059669;color:#fff;font-weight:bold;min-height:62px;font-size:20px}
+.full{width:100%}.ghost{background:none;color:#475569;font-size:15px;min-height:40px}
+.box{background:#fff;border-radius:18px;padding:16px 18px;margin:12px 0;box-shadow:0 1px 3px #0001}
+.dim{color:#64748b;font-size:14px}.center{text-align:center}
+.li{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #e2e8f0}
+.ex{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #f1f5f9}.ex .w{font-size:28px;font-weight:bold;flex:1}
+.ch{display:block;width:100%;margin:10px 0;min-height:60px;font-size:24px;background:#fff;border:2px solid #cbd5e1}
+.ok{background:#bbf7d0!important;border-color:#16a34a!important}.ng{background:#fecaca!important;border-color:#dc2626!important}
+.snd{font-size:30px;font-weight:bold;color:#dc2626}
+</style></head><body>
+<script src="../phonics.js?v=1"></script>
+<div id="app"><p class="dim center">よみこみ中…</p></div>
+<script>
+const COURSE=[{"k": "a", "t": "a（短い音）", "snd": "ア（エに近い）", "d": "口を横に広げて「ア」と「エ」の間の音。", "ex": ["cat", "bag", "g2-fan", "g2-camp", "g2-back"]}, {"k": "e", "t": "e（短い音）", "snd": "エ", "d": "日本語の「エ」に近い短い音。", "ex": ["bed", "desk", "pen", "red", "g2-best"]}, {"k": "i", "t": "i（短い音）", "snd": "イ", "d": "力を抜いた短い「イ」。", "ex": ["fish", "big", "sit", "milk", "swim"]}, {"k": "o", "t": "o（短い音）", "snd": "ア（オに近い）", "d": "口を縦に開けて短く「ア」。", "ex": ["dog", "box", "hot", "g2-job", "g2-drop"]}, {"k": "u", "t": "u（短い音）", "snd": "ア", "d": "口をあまり開けずに短く「ア」。", "ex": ["bus", "cup", "run", "sun", "lunch"]}, {"k": "ae", "t": "a_e（マジックe）", "snd": "エイ", "d": "最後の e は読まず、前の a を「エイ」と読む。", "ex": ["make", "game", "name", "g2-late", "g2-same"]}, {"k": "ie", "t": "i_e（マジックe）", "snd": "アイ", "d": "最後の e は読まず、前の i を「アイ」と読む。", "ex": ["like", "time", "g2-rise"]}, {"k": "oe", "t": "o_e（マジックe）", "snd": "オウ", "d": "最後の e は読まず、前の o を「オウ」と読む。", "ex": ["home", "g2-phone", "close", "g2-role"]}, {"k": "ue", "t": "u_e（マジックe）", "snd": "ユー", "d": "最後の e は読まず、前の u を「ユー」と読む。", "ex": ["use", "cute", "june"]}, {"k": "sh", "t": "sh", "snd": "シュ", "d": "くちびるを丸めて「シュ」。", "ex": ["fish", "g2-shy", "g2-share", "g2-shall", "shop"]}, {"k": "ch", "t": "ch・tch", "snd": "チ", "d": "「チ」に近い音。tch も同じ。", "ex": ["lunch", "teacher", "watch", "g2-catch", "china"]}, {"k": "th", "t": "th", "snd": "ス／ズ（舌をかむ）", "d": "舌の先を上の歯に軽く当てて息を出す。", "ex": ["think", "thank-you", "g2-then", "g2-than"]}, {"k": "ck", "t": "ck", "snd": "ク", "d": "2文字で1つの「ク」。", "ex": ["g2-back", "g2-pick", "g2-quickly"]}, {"k": "ng", "t": "ng", "snd": "ング", "d": "「グ」はほとんど言わない。", "ex": ["sing", "long", "morning", "spring"]}, {"k": "ee", "t": "ee・ea", "snd": "イー", "d": "のばす「イー」。", "ex": ["tree", "week", "eat", "read", "g2-meat"]}, {"k": "ai", "t": "ai・ay", "snd": "エイ", "d": "「エイ」。ay は単語の最後によく出る。", "ex": ["rain", "train", "play", "day", "today"]}, {"k": "ow", "t": "oa・ow", "snd": "オウ（ow は アウ も）", "d": "oa は「オウ」。ow は「オウ」か「アウ」。", "ex": ["snow", "g2-show", "now", "how"]}, {"k": "oo", "t": "oo", "snd": "ウー／ウ", "d": "ふつうは「ウー」。book・cook などは短く「ウ」。", "ex": ["room", "book", "cook", "g2-tooth", "food"]}, {"k": "ar", "t": "ar・or", "snd": "アー／オー", "d": "ar は「アー」、or は「オー」。舌を少し丸める。", "ex": ["park", "car", "morning", "sport", "g2-story"]}, {"k": "er", "t": "er・ir・ur", "snd": "アー（口を開けない）", "d": "口をあまり開けず、舌を丸めて「アー」。", "ex": ["sister", "girl", "bird", "thursday", "irr-hurt"]}, {"k": "c", "t": "c（e・i・y の前）", "snd": "ス", "d": "c は e・i・y の前で「ス」。それ以外は「ク」。", "ex": ["city", "dance", "g2-voice", "g2-piece"]}];
+const KEY="phonics-course-v1";let S;try{S=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){S={}}S.done=S.done||{};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const $=()=>document.getElementById("app");
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+let W={},au=null;
+function play(id){try{if(au)au.pause();au=new Audio("../audio/w/"+id+".m4a");const p=au.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
+function home(){const n=COURSE.filter(r=>S.done[r.k]).length;
+ $().innerHTML=`<h1 style="font-size:20px;margin:6px 0 2px">🔤 フォニックス</h1><div class="dim">つづりと音のきまり。1日1〜2個ずつでOK。</div>
+ <div class="box"><b>${n} / ${COURSE.length}</b> 個クリア<div class="dim" style="margin-top:6px">きまりを知ると、初めて見る単語も読み方の見当がつきます。ただし、きまりどおりに読めない単語もあるので、最後に「例外の単語」も見ておこう。</div></div>
+ <div class="box" style="padding:4px 16px">${COURSE.map((r,i)=>`<div class="li" onclick="rule(${i})"><div style="flex:1"><b>${i+1}. ${esc(r.t)}</b>　<span style="color:#dc2626">${esc(r.snd)}</span></div>${S.done[r.k]?"✅":"▶"}</div>`).join("")}
+ <div class="li" onclick="exc()"><div style="flex:1"><b>${COURSE.length+1}. 例外の単語（音で覚える）</b></div>▶</div></div>
+ <a href="../"><button class="full">📇 英単語アプリへもどる</button></a>`}
+function rule(i){const r=COURSE[i];
+ $().innerHTML=`<button class="ghost" onclick="home()">◀ もどる</button>
+ <div class="box"><div class="dim">${i+1} / ${COURSE.length}</div><h2 style="margin:4px 0">${esc(r.t)}</h2><div class="snd">${esc(r.snd)}</div><div style="margin-top:8px">${esc(r.d)}</div></div>
+ <div class="box"><b>聞いて、まねしよう</b>${PH.legend}${r.ex.map(id=>`<div class="ex"><div class="w">${PH.colored(W[id].word)}</div><div class="dim">${esc(W[id].meaning)}</div><button onclick="play('${id}')">🔊</button></div>`).join("")}</div>
+ <button class="main" onclick="quiz(${i})">たしかめる（3問）</button>`;play(r.ex[0])}
+function quiz(i,n=0,ok=0){const r=COURSE[i];if(n>=3){if(ok===3){S.done[r.k]=1;save()}
+  $().innerHTML=`<div class="box center"><div style="font-size:44px">${ok===3?"🎉":"🙂"}</div><h2>${ok} / 3 正解</h2><div class="dim">${ok===3?"クリア！":"もう一度、例の単語を聞いてからやってみよう。"}</div></div>
+  <button class="main" onclick="${ok===3&&i+1<COURSE.length?`rule(${i+1})`:`rule(${i})`}">${ok===3&&i+1<COURSE.length?"次のきまりへ":"もう一度"}</button><button class="full" style="margin-top:10px" onclick="home()">一覧へ</button>`;return}
+ const target=shuf(r.ex)[0];
+ const others=shuf(COURSE.filter(x=>x.k!==r.k).flatMap(x=>x.ex)).filter(id=>id!==target&&!PH.analyze(W[id].word).segs.some(s=>s.r===r.k||(r.k==="ow"&&s.r==="oa")||(r.k==="ar"&&s.r==="or")));
+ const opts=shuf([target,...[...new Set(others)].slice(0,2)]);
+ $().innerHTML=`<div class="dim">${esc(r.t)}　${n+1} / 3</div>
+ <div class="box center"><div>「<span class="snd">${esc(r.snd)}</span>」の音（${esc(r.t)}）が入っている単語は？</div><div class="dim" style="margin-top:6px">わからなければ、それぞれの🔊で聞いてみよう</div></div>
+ ${opts.map(id=>`<div style="display:flex;gap:8px;align-items:center"><button class="ch" style="flex:1" data-id="${id}" onclick="ans(this,'${id}','${target}',${i},${n},${ok})">${esc(W[id].word)}</button><button onclick="play('${id}')">🔊</button></div>`).join("")}`}
+function ans(b,id,t,i,n,ok){if(window.lock)return;window.lock=1;const good=id===t;
+ document.querySelectorAll(".ch").forEach(x=>{if(x.dataset.id===t)x.classList.add("ok");else if(x===b)x.classList.add("ng")});play(t);
+ setTimeout(()=>{window.lock=0;quiz(i,n+1,ok+(good?1:0))},1300)}
+function exc(){const list=Object.values(W).filter(w=>(w.no||w.no2)&&PH.analyze(w.word).exc.length).slice(0,40);
+ $().innerHTML=`<button class="ghost" onclick="home()">◀ もどる</button><div class="box"><h2 style="margin:4px 0">例外の単語</h2><div>きまりどおりに読めない、よく出る単語です。何度も聞いて、音ごと覚えよう。</div></div>
+ <div class="box">${list.map(w=>`<div class="ex"><div class="w" style="font-size:24px">${esc(w.word)}</div><div class="dim">${esc(w.meaning)}</div><button onclick="play('${w.id}')">🔊</button></div>`).join("")}</div>`}
+fetch("../words.json?v=8").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{j.forEach(w=>W[w.id]=w);home()}).catch(e=>{$().innerHTML='<div class="box">読み込めません：'+esc(e.message)+'</div>'});
+</script></body></html>

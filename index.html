@@ -40,6 +40,7 @@ select{font-size:17px;padding:8px;border-radius:10px;border:1px solid #94a3b8;ba
 label{display:block;margin:14px 0 6px;font-weight:bold}
 h2{margin:4px 0;font-size:20px}h3{margin:16px 0 4px;font-size:16px}
 </style></head><body>
+<script src="phonics.js?v=1"></script>
 <div id="app"><p class="center dim">よみこみ中…</p></div>
 <script>
 // ===== 保存（これまでの記録と同じ場所） =====
@@ -112,8 +113,9 @@ function home(){ses=null;const p=plan(),cs=all.filter(w=>card(w)),wr=cs.filter(w
  ${any?`<button class="main" onclick="start()">今日の学習をはじめる</button><div class="dim center" style="margin-top:8px">復習 ${rev}語 ＋ 新しい単語 ${p.fresh.length}語${p.due.length>rev?`（残り ${p.due.length-rev}語は次の回）`:""}</div>`
  :`<div class="box center"><div style="font-size:40px">🎉</div><b>今日の分はおわり！</b><div class="dim">また明日。つづきは明日出ます。</div></div>${p.left?`<button class="full" onclick="more()">あと5語すすめる</button>`:""}`}
  <button class="full" style="margin-top:22px" onclick="record()">📒 学習の記録を見る</button>
+ <a href="phonics/" style="display:block;margin-top:10px"><button class="full">🔤 フォニックス（つづりと音のきまり）</button></a>
  <a href="grammar/" style="display:block;margin-top:10px"><button class="full">📘 中2 英文法カードへ</button></a>
- <div class="center" style="margin-top:6px"><button class="ghost" onclick="settings()">⚙ 設定</button></div><div class="dim center">版 7</div>`}
+ <div class="center" style="margin-top:6px"><button class="ghost" onclick="settings()">⚙ 設定</button></div><div class="dim center">版 8</div>`}
 function more(){const t=dstr();S.bonus={date:t,n:((S.bonus&&S.bonus.date===t)?S.bonus.n:0)+5};saveS();start()}
 // ===== 学習の流れ =====
 const canSpell=w=>/^[A-Za-z' ]+$/.test(w.word)&&w.word.replace(/ /g,"").length<=12;
@@ -136,18 +138,18 @@ const hintBtn=`<button class="hintb full" style="margin:2px 0 4px" onclick="hint
 const later=(w,f)=>setTimeout(()=>{if(ses&&ses.cur&&ses.cur.w===w)f()},150);
 // 見る・聞く（はじめての単語）
 function intro(w){$().innerHTML=`${head("はじめての単語：見る・聞く")}
- <div class="box center"><div class="dim">${w.no?"中1カード "+w.no:w.no2?"中2カード "+w.no2:w.irr?esc(w.topic):""}</div><div class="word">${esc(w.word)}</div><div class="mean" style="margin-top:8px">${esc(w.meaning)}</div>
+ <div class="box center"><div class="dim">${w.no?"中1カード "+w.no:w.no2?"中2カード "+w.no2:w.irr?esc(w.topic):""}</div><div class="word">${PH.colored(w.word)}</div>${PH.help(w.word)}<div class="mean" style="margin-top:8px">${esc(w.meaning)}</div>
  <div><button style="margin:12px 0" onclick="play('${w.id}','w')">🔊 単語を聞く</button></div>
  ${w.phrase?`<div style="font-size:22px;font-weight:bold">${esc(w.phrase)}</div><div class="dim">${esc(w.phraseJa||"")}</div><div><button style="margin:8px 0 12px" onclick="play('${w.id}','p')">🔊 短文を聞く</button></div>`:""}
  ${w.example?`<div style="font-size:18px">${esc(w.example)}</div><div class="dim">${esc(w.exampleJa||"")}</div><div><button style="margin-top:8px" onclick="play('${w.id}','e')">🔊 文を聞く</button></div>`:""}</div>
- <div class="dim center" style="margin-bottom:10px">聞いたあと、声に出して言ってみよう</div>
+ <div class="center" style="margin-bottom:6px">${PH.legend}</div><div class="dim center" style="margin-bottom:10px">色のかたまりごとに音を確かめて、声に出して言ってみよう</div>
  <button class="main" onclick="ses.done++;next()">次へ</button>`;later(w,()=>playSeq(w.id,seqOf(w)))}
 function options(w,key){const pool=shuf(all.filter(x=>x.id!==w.id&&x[key]&&x[key]!==w[key]));
  return shuf([w,...[...pool.filter(x=>x.pos===w.pos),...pool.filter(x=>x.pos!==w.pos)].slice(0,3)])}
 const optHtml=key=>ses.opts.map((o,i)=>`<button class="ch" onclick="pickAns(${i})">${esc(o[key])}</button>`).join("");
 // ① 単語を読む（英語 → 意味）
 function read(w){ses.opts=options(w,"meaning");$().innerHTML=`${head(STAGE[1])}
- <div class="box center"><div class="word">${esc(w.word)}</div><button style="margin-top:10px" onclick="play('${w.id}','w')">🔊</button></div>${hintBtn}${optHtml("meaning")}`;later(w,()=>play(w.id,"w"))}
+ <div class="box center"><div class="word">${PH.colored(w.word)}</div><button style="margin-top:10px" onclick="play('${w.id}','w')">🔊</button></div>${hintBtn}${optHtml("meaning")}`;later(w,()=>play(w.id,"w"))}
 // ② 短文を読む（短い英語 → 意味）
 function sent(w){if(!w.phrase||!w.phraseJa){read(w);return}ses.opts=options(w,"phraseJa");$().innerHTML=`${head(STAGE[2])}
  <div class="box center"><div class="sent">${esc(w.phrase)}</div><button style="margin-top:10px" onclick="play('${w.id}','p')">🔊</button></div>${hintBtn}${optHtml("phraseJa")}`;later(w,()=>play(w.id,"p"))}
@@ -197,7 +199,7 @@ function result(ok){const t=ses.cur,w=t.w,my=ses;
  beep(170,.25,"sawtooth");if(!t.retry)ses.wrong.push({w,stage:t.stage});
  ses.tasks.splice(Math.min(3,ses.tasks.length),0,{w,stage:t.stage===4?3:t.stage,retry:true});ses.n++;
  setTimeout(()=>{if(ses!==my)return;playSeq(w.id,seqOf(w));
-  $().innerHTML=`${head("こたえ")}<div class="box center"><div class="word">${esc(w.word)}</div><div class="mean" style="margin-top:8px">${esc(w.meaning)}</div>
+  $().innerHTML=`${head("こたえ")}<div class="box center"><div class="word">${PH.colored(w.word)}</div>${PH.help(w.word)}<div class="mean" style="margin-top:8px">${esc(w.meaning)}</div>
   <div><button style="margin:12px 0" onclick="play('${w.id}','w')">🔊 単語を聞く</button></div>
   ${w.phrase?`<div style="font-size:22px;font-weight:bold">${esc(w.phrase)}</div><div class="dim">${esc(w.phraseJa||"")}</div><div><button style="margin-top:8px" onclick="play('${w.id}','p')">🔊 短文を聞く</button></div>`:""}</div>
   <div class="dim center" style="margin-bottom:10px">${t.stage>=3?"つづりを指でなぞってから進もう。":"声に出して読んでから進もう。"}あとでもう一度出ます。</div>
@@ -254,6 +256,6 @@ function settings(){$().innerHTML=`<button class="ghost" onclick="home()">◀ �
  ・<b>すぐに答え合わせ</b>：まちがえたら、その場で正しい形を見て聞きます。</div></div>
  <div class="dim">新しい単語は、カードの番号順に出ます（中1のあとに中2）。記録はこのスマホの中に保存されます。</div>`}
 function setv(k,v){S.settings[k]=v;saveS();if(k==="range")applyRange()}
-fetch("words.json?v=7").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{all=j;applyRange();home()})
+fetch("words.json?v=8").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{all=j;applyRange();home()})
  .catch(e=>{$().innerHTML='<div class="box">単語データを読み込めません：'+esc(e.message)+'</div>'});
 </script></body></html>
