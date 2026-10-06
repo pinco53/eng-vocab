@@ -63,6 +63,7 @@ const GROUPS=[["全体",[["","中1・中2 すべて"]]],
  ["中1（品詞別）",POSG.map(x=>["1p:"+x,"中1 "+x+(x==="その他"?"（接続詞・疑問詞など）":"")])],
  ["中2（カード番号順）",[["2","中2 すべて（1〜158）"],["2:1-40","中2 カード1〜40（abroad〜example）"],["2:41-80","中2 カード41〜80（excuse〜market）"],["2:81-120","中2 カード81〜120（meat〜set）"],["2:121-158","中2 カード121〜158（shall〜wrong）"]]],
  ["中2（テーマ別）",THEMES2.map(x=>["2t:"+x,"中2 "+x])],
+ ["中2 教科書（巻末の単語・ページ順）",[["4","教科書 中2で出る単語 すべて"],["4:7-30","教科書 p.7〜30"],["4:31-60","教科書 p.31〜60"],["4:61-90","教科書 p.61〜90"],["4:91-132","教科書 p.91〜132"]]],
  ["中2（不規則動詞）",[["3","不規則動詞 すべて（48語）"],["3t:不規則動詞 A・B・C型","不規則動詞 A・B・C型（go-went-gone など）"],["3t:不規則動詞 A・B・B型","不規則動詞 A・B・B型（buy-bought-bought など）"],["3t:不規則動詞 A・B・A型","不規則動詞 A・B・A型（come-came-come など）"],["3t:不規則動詞 A・A・A型","不規則動詞 A・A・A型（read-read-read など）"]]],
  ["中2（品詞別）",POSG.map(x=>["2p:"+x,"中2 "+x+(x==="その他"?"（接続詞・助動詞など）":"")])]];
 const RANGES=GROUPS.flatMap(g=>g[1]);
@@ -74,10 +75,10 @@ const addDays=(s,n)=>{const d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);r
 const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 let all=[],words=[],ses=null,sp=null;
 function applyRange(){let r=S.settings.range;if(!RANGES.some(x=>x[0]===r))r=S.settings.range="";if(!r){words=all;return}
- const [d,rg]=r.split(":");const base=all.filter(w=>w[({"1":"no","2":"no2","3":"irr"})[d[0]]]);
+ const [d,rg]=r.split(":");const KEYS={"1":"no","2":"no2","3":"irr","4":"tb"};const base=all.filter(w=>w[KEYS[d[0]]]);
  if(d[1]==="t"){words=base.filter(w=>w.topic===rg);return}
  if(d[1]==="p"){words=base.filter(w=>rg==="その他"?!POSG.slice(0,5).includes(w.pos):w.pos===rg);return}
- if(!rg){words=base;return}const [a,b]=rg.split("-").map(Number);const key=d==="2"?"no2":"no";words=base.filter(w=>w[key]>=a&&w[key]<=b)}
+ if(!rg){words=base;return}const [a,b]=rg.split("-").map(Number);const key=KEYS[d[0]];words=base.filter(w=>w[key]>=a&&w[key]<=b)}
 const card=w=>S.cards[w.id];
 const lvOf=w=>card(w)?card(w).lv:0;
 // ===== 音 =====
@@ -112,10 +113,11 @@ function home(){ses=null;const p=plan(),cs=all.filter(w=>card(w)),wr=cs.filter(w
  <div class="bar" style="margin-top:14px"><i style="width:${all.length?cs.length/all.length*100:0}%"></i></div><div class="dim center" style="margin-top:4px">全${all.length}語</div></div>
  ${any?`<button class="main" onclick="start()">今日の学習をはじめる</button><div class="dim center" style="margin-top:8px">復習 ${rev}語 ＋ 新しい単語 ${p.fresh.length}語${p.due.length>rev?`（残り ${p.due.length-rev}語は次の回）`:""}</div>`
  :`<div class="box center"><div style="font-size:40px">🎉</div><b>今日の分はおわり！</b><div class="dim">また明日。つづきは明日出ます。</div></div>${p.left?`<button class="full" onclick="more()">あと5語すすめる</button>`:""}`}
- <button class="full" style="margin-top:22px" onclick="record()">📒 学習の記録を見る</button>
+ <button class="full" style="margin-top:22px;background:#fde68a" onclick="testSetup()">📝 テスト勉強モード（長時間・範囲をしぼって）</button>
+ <button class="full" style="margin-top:10px" onclick="record()">📒 学習の記録を見る</button>
  <a href="phonics/" style="display:block;margin-top:10px"><button class="full">🔤 フォニックス（つづりと音のきまり）</button></a>
  <a href="grammar/" style="display:block;margin-top:10px"><button class="full">📘 中2 英文法カードへ</button></a>
- <div class="center" style="margin-top:6px"><button class="ghost" onclick="settings()">⚙ 設定</button></div><div class="dim center">版 8</div>`}
+ <div class="center" style="margin-top:6px"><button class="ghost" onclick="settings()">⚙ 設定</button></div><div class="dim center">版 9</div>`}
 function more(){const t=dstr();S.bonus={date:t,n:((S.bonus&&S.bonus.date===t)?S.bonus.n:0)+5};saveS();start()}
 // ===== 学習の流れ =====
 const canSpell=w=>/^[A-Za-z' ]+$/.test(w.word)&&w.word.replace(/ /g,"").length<=12;
@@ -138,7 +140,7 @@ const hintBtn=`<button class="hintb full" style="margin:2px 0 4px" onclick="hint
 const later=(w,f)=>setTimeout(()=>{if(ses&&ses.cur&&ses.cur.w===w)f()},150);
 // 見る・聞く（はじめての単語）
 function intro(w){$().innerHTML=`${head("はじめての単語：見る・聞く")}
- <div class="box center"><div class="dim">${w.no?"中1カード "+w.no:w.no2?"中2カード "+w.no2:w.irr?esc(w.topic):""}</div><div class="word">${PH.colored(w.word)}</div>${PH.help(w.word)}<div class="mean" style="margin-top:8px">${esc(w.meaning)}</div>
+ <div class="box center"><div class="dim">${w.no?"中1カード "+w.no:w.no2?"中2カード "+w.no2:w.tb?"教科書 p."+w.tb:w.irr?esc(w.topic):""}</div><div class="word">${PH.colored(w.word)}</div>${PH.help(w.word)}<div class="mean" style="margin-top:8px">${esc(w.meaning)}</div>
  <div><button style="margin:12px 0" onclick="play('${w.id}','w')">🔊 単語を聞く</button></div>
  ${w.phrase?`<div style="font-size:22px;font-weight:bold">${esc(w.phrase)}</div><div class="dim">${esc(w.phraseJa||"")}</div><div><button style="margin:8px 0 12px" onclick="play('${w.id}','p')">🔊 短文を聞く</button></div>`:""}
  ${w.example?`<div style="font-size:18px">${esc(w.example)}</div><div class="dim">${esc(w.exampleJa||"")}</div><div><button style="margin-top:8px" onclick="play('${w.id}','e')">🔊 文を聞く</button></div>`:""}</div>
@@ -154,7 +156,7 @@ function read(w){ses.opts=options(w,"meaning");$().innerHTML=`${head(STAGE[1])}
 function sent(w){if(!w.phrase||!w.phraseJa){read(w);return}ses.opts=options(w,"phraseJa");$().innerHTML=`${head(STAGE[2])}
  <div class="box center"><div class="sent">${esc(w.phrase)}</div><button style="margin-top:10px" onclick="play('${w.id}','p')">🔊</button></div>${hintBtn}${optHtml("phraseJa")}`;later(w,()=>play(w.id,"p"))}
 // つづれない語（a / an など）は、意味 → 英語を選ぶ
-function pick(w){ses.opts=options(w,"word");$().innerHTML=`${head(STAGE[ses.cur.stage])}
+function pick(w){ses.opts=options(w,"word");$().innerHTML=`${head(ses.cur.lbl||STAGE[ses.cur.stage])}
  <div class="box center"><div class="dim">この意味の英語は？</div><div class="mean" style="margin-top:6px">${esc(w.meaning)}</div></div>${hintBtn}${optHtml("word")}`}
 function pickAns(i){if(!ses||ses.locked)return;ses.locked=true;const w=ses.cur.w;
  [...document.querySelectorAll(".ch")].forEach((b,k)=>{if(ses.opts[k].id===w.id)b.classList.add("ok");else if(k===i)b.classList.add("ng")});
@@ -192,7 +194,7 @@ function hint(){if(!ses||ses.locked)return;const t=ses.cur,w=t.w;t.hint=true;
  shuf(btns.map((b,k)=>k)).forEach(k=>{if(cut<2&&ses.opts[k].id!==w.id&&!btns[k].classList.contains("off")){btns[k].classList.add("off");btns[k].disabled=true;cut++}});
  if(t.stage!==3&&t.stage!==4)play(w.id,t.stage===2?"p":"w")}
 // 正解・まちがいの処理
-function result(ok){const t=ses.cur,w=t.w,my=ses;
+function result(ok){if(ses&&ses.test)return testResult(ok);const t=ses.cur,w=t.w,my=ses;
  if(!t.retry)grade(w,t.stage,ok,t.hint);
  if(ok){beep(660,.09);setTimeout(()=>beep(990,.12),80);const sq=t.stage===2?["p"]:(t.stage>=3?seqOf(w):["w"]);playSeq(w.id,sq);ses.done++;
   setTimeout(()=>{if(ses===my)next()},sq.length>1?2300:1100);return}
@@ -256,6 +258,46 @@ function settings(){$().innerHTML=`<button class="ghost" onclick="home()">◀ �
  ・<b>すぐに答え合わせ</b>：まちがえたら、その場で正しい形を見て聞きます。</div></div>
  <div class="dim">新しい単語は、カードの番号順に出ます（中1のあとに中2）。記録はこのスマホの中に保存されます。</div>`}
 function setv(k,v){S.settings[k]=v;saveS();if(k==="range")applyRange()}
-fetch("words.json?v=8").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{all=j;applyRange();home()})
+// ===== 📝 テスト勉強モード：範囲の全単語を「意味→英語→つづり」で3回続けて正解するまでくり返す =====
+const TESTS=[["mid2","2学期 中間テスト",null]]; // 範囲（教科書ページ）は、わかったらここに入れる
+function testRangeWords(){const t=S.settings.test||{};const a=+t.a||7,b=+t.b||132;return all.filter(w=>w.tb&&w.tb>=a&&w.tb<=b)}
+function testSetup(){const t=S.settings.test||{a:7,b:132};S.tm=S.tm||{};const ws=testRangeWords(),m=ws.filter(w=>(S.tm[w.id]||0)>=3).length;
+ $().innerHTML=`<button class="ghost" onclick="home()">◀ もどる</button><h2>📝 テスト勉強モード</h2>
+ <div class="box"><b>範囲（教科書のページ）</b>
+ <div class="row" style="align-items:center;margin-top:8px"><input id="ta" type="number" inputmode="numeric" value="${t.a||7}" style="font-size:20px;padding:8px;border-radius:10px;border:1px solid #94a3b8;width:100%"><div style="flex:none">〜</div><input id="tb" type="number" inputmode="numeric" value="${t.b||132}" style="font-size:20px;padding:8px;border-radius:10px;border:1px solid #94a3b8;width:100%"></div>
+ <div class="dim" style="margin-top:6px">2学期 中間テストの範囲：<b>まだ未設定</b>（範囲がわかったら、ここに入れておきます）</div>
+ <button class="full" style="margin-top:10px" onclick="testSave()">この範囲にする</button></div>
+ <div class="box"><div>この範囲の単語：<b>${ws.length}語</b>　仕上がった：<b>${m}語</b></div><div class="bar" style="margin-top:8px"><i style="width:${ws.length?m/ws.length*100:0}%"></i></div></div>
+ ${ws.length?`<button class="main" onclick="testStart()">はじめる（${ws.length-m}語が残り）</button>`:`<div class="note">この範囲の単語がありません。</div>`}
+ <div class="box" style="font-size:14px;line-height:1.7"><b>やり方</b><br>・1つの単語を ①意味を選ぶ → ②英語を選ぶ → ③つづる の順に出します<br>・3回つづけて正解すると「仕上がり」。まちがえると①にもどって少しあとに再登場<br>・単語をまぜて出すので、似た単語の区別もつきます<br>・いつでもやめてOK。続きは次回もそこから<br>・25分たったら5分休けいしよう</div>
+ ${m?`<button class="ghost" onclick="if(confirm('仕上がりをリセットしますか？')){testRangeWords().forEach(w=>delete S.tm[w.id]);saveS();testSetup()}">仕上がりをリセット</button>`:""}`}
+function testSave(){const a=+document.getElementById("ta").value||7,b=+document.getElementById("tb").value||132;S.settings.test={a:Math.min(a,b),b:Math.max(a,b)};saveS();testSetup()}
+function testStart(){S.tm=S.tm||{};const ws=shuf(testRangeWords().filter(w=>(S.tm[w.id]||0)<3));if(!ws.length){testSetup();return}
+ ses={test:true,q:ws,total:testRangeWords().length,t0:Date.now(),ok:0,ng:0,wrong:[],tasks:[],n:0,done:0,rest:false};testNext()}
+function testNext(){if(!ses||!ses.test)return;
+ const all3=testRangeWords();ses.n=all3.length;ses.done=all3.filter(w=>(S.tm[w.id]||0)>=3).length;
+ if(!ses.q.length){testEnd();return}
+ const min=Math.floor((Date.now()-ses.t0)/60000);
+ if(min>=25&&!ses.rest){ses.rest=true;$().innerHTML=`<div class="box center"><div style="font-size:44px">☕</div><h2>25分がんばりました</h2><div>5分休けいしよう。水を飲んで、体をのばそう。</div></div><button class="main" onclick="testNext()">再開する</button><button class="full" style="margin-top:10px" onclick="testEnd()">今日はここまで</button>`;return}
+ const w=ses.q.shift(),k=S.tm[w.id]||0;ses.locked=false;
+ if(k===0){ses.cur={w,stage:1,hint:false};read(w)}
+ else if(k===1||!canSpell(w)){ses.cur={w,stage:2,hint:false,lbl:"② 英語を選ぶ"};pick(w)}
+ else{ses.cur={w,stage:3,hint:false};spell(w,true)}
+ const b=document.querySelector(".step");if(b)b.textContent+=`　（仕上がり ${ses.done}/${ses.n}・${min}分）`}
+function testResult(ok){const t=ses.cur,w=t.w,my=ses;grade(w,t.stage,ok,t.hint);
+ if(ok&&!t.hint){S.tm[w.id]=(S.tm[w.id]||0)+1;ses.ok++}else if(ok){}else{S.tm[w.id]=0;ses.ng++;if(!ses.wrong.includes(w))ses.wrong.push(w)}
+ saveS();
+ if((S.tm[w.id]||0)<3){const pos=ok?Math.min(ses.q.length,6+Math.floor(Math.random()*4)):Math.min(ses.q.length,3);ses.q.splice(pos,0,w)}
+ if(ok){beep(660,.09);setTimeout(()=>beep(990,.12),80);play(w.id,"w");setTimeout(()=>{if(ses===my)testNext()},900);return}
+ beep(170,.25,"sawtooth");setTimeout(()=>{if(ses!==my)return;play(w.id,"w");
+  $().innerHTML=`<div class="step">こたえ</div><div class="box center"><div class="word">${PH.colored(w.word)}</div>${PH.help(w.word)}<div class="mean" style="margin-top:8px">${esc(w.meaning)}</div><div class="dim">教科書 p.${w.tb}</div>
+  <button style="margin-top:12px" onclick="play('${w.id}','w')">🔊 もう一度聞く</button></div>
+  <div class="dim center" style="margin-bottom:10px">声に出して読み、つづりを指でなぞろう。少しあとにもう一度出ます。</div><button class="main" onclick="testNext()">次へ</button>`},600)}
+function testEnd(){const s=ses;ses=null;const ws=testRangeWords(),m=ws.filter(w=>(S.tm[w.id]||0)>=3).length,min=Math.round((Date.now()-s.t0)/60000);
+ $().innerHTML=`<div class="box center"><div style="font-size:44px">📝</div><h2>おつかれさま！</h2><div>${min}分　正解 ${s.ok}　まちがい ${s.ng}</div><div style="margin-top:6px">仕上がり <b>${m} / ${ws.length}</b> 語</div></div>
+ ${s.wrong.length?`<div class="note"><b>✏️ ノートに3回ずつ書こう</b><br>${s.wrong.map(w=>esc(w.word)+"　"+esc(w.meaning)).join("<br>")}</div>`:""}
+ <button class="main" onclick="testSetup()">テスト勉強モードへ</button><button class="full" style="margin-top:10px" onclick="home()">ホームへ</button>`}
+
+fetch("words.json?v=9").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{all=j;applyRange();home()})
  .catch(e=>{$().innerHTML='<div class="box">単語データを読み込めません：'+esc(e.message)+'</div>'});
 </script></body></html>
