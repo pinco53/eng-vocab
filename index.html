@@ -117,7 +117,7 @@ function home(){ses=null;const p=plan(),cs=all.filter(w=>card(w)),wr=cs.filter(w
  <button class="full" style="margin-top:10px" onclick="record()">📒 学習の記録を見る</button>
  <a href="phonics/" style="display:block;margin-top:10px"><button class="full">🔤 フォニックス（つづりと音のきまり）</button></a>
  <a href="grammar/" style="display:block;margin-top:10px"><button class="full">📘 中2 英文法カードへ</button></a>
- <div class="center" style="margin-top:6px"><button class="ghost" onclick="settings()">⚙ 設定</button></div><div class="dim center">版 9</div>`}
+ <div class="center" style="margin-top:6px"><button class="ghost" onclick="settings()">⚙ 設定</button></div><div class="dim center">版 10</div>`}
 function more(){const t=dstr();S.bonus={date:t,n:((S.bonus&&S.bonus.date===t)?S.bonus.n:0)+5};saveS();start()}
 // ===== 学習の流れ =====
 const canSpell=w=>/^[A-Za-z' ]+$/.test(w.word)&&w.word.replace(/ /g,"").length<=12;
@@ -260,12 +260,12 @@ function settings(){$().innerHTML=`<button class="ghost" onclick="home()">◀ �
 function setv(k,v){S.settings[k]=v;saveS();if(k==="range")applyRange()}
 // ===== 📝 テスト勉強モード：範囲の全単語を「意味→英語→つづり」で3回続けて正解するまでくり返す =====
 const TESTS=[["mid2","2学期 中間テスト",null]]; // 範囲（教科書ページ）は、わかったらここに入れる
-function testRangeWords(){const t=S.settings.test||{};const a=+t.a||7,b=+t.b||132;return all.filter(w=>w.tb&&w.tb>=a&&w.tb<=b)}
-function testSetup(){const t=S.settings.test||{a:7,b:132};S.tm=S.tm||{};const ws=testRangeWords(),m=ws.filter(w=>(S.tm[w.id]||0)>=3).length;
+function testRangeWords(){const t=S.settings.test||{mid2:1};if(t.mid2)return all.filter(w=>w.mid2);const a=+t.a||7,b=+t.b||132;return all.filter(w=>w.tb&&w.tb>=a&&w.tb<=b)}
+function testSetup(){const t=S.settings.test||{mid2:1,a:31,b:61};S.tm=S.tm||{};const ws=testRangeWords(),m=ws.filter(w=>(S.tm[w.id]||0)>=3).length;
  $().innerHTML=`<button class="ghost" onclick="home()">◀ もどる</button><h2>📝 テスト勉強モード</h2>
  <div class="box"><b>範囲（教科書のページ）</b>
  <div class="row" style="align-items:center;margin-top:8px"><input id="ta" type="number" inputmode="numeric" value="${t.a||7}" style="font-size:20px;padding:8px;border-radius:10px;border:1px solid #94a3b8;width:100%"><div style="flex:none">〜</div><input id="tb" type="number" inputmode="numeric" value="${t.b||132}" style="font-size:20px;padding:8px;border-radius:10px;border:1px solid #94a3b8;width:100%"></div>
- <div class="dim" style="margin-top:6px">2学期 中間テストの範囲：<b>まだ未設定</b>（範囲がわかったら、ここに入れておきます）</div>
+ <button class="${t.mid2?"main":"full"}" style="margin-top:10px" onclick="S.settings.test={mid2:1,a:31,b:61};saveS();testSetup()">${t.mid2?"✅ ":""}2学期中間テスト（10/13）Program 3・4<br><small>教科書 p.31〜40・p.51〜61＋New Words</small></button><div class="dim" style="margin-top:6px">ページを自分で決めるときは、上に入れて「この範囲にする」</div>
  <button class="full" style="margin-top:10px" onclick="testSave()">この範囲にする</button></div>
  <div class="box"><div>この範囲の単語：<b>${ws.length}語</b>　仕上がった：<b>${m}語</b></div><div class="bar" style="margin-top:8px"><i style="width:${ws.length?m/ws.length*100:0}%"></i></div></div>
  ${ws.length?`<button class="main" onclick="testStart()">はじめる（${ws.length-m}語が残り）</button>`:`<div class="note">この範囲の単語がありません。</div>`}
@@ -298,6 +298,6 @@ function testEnd(){const s=ses;ses=null;const ws=testRangeWords(),m=ws.filter(w=
  ${s.wrong.length?`<div class="note"><b>✏️ ノートに3回ずつ書こう</b><br>${s.wrong.map(w=>esc(w.word)+"　"+esc(w.meaning)).join("<br>")}</div>`:""}
  <button class="main" onclick="testSetup()">テスト勉強モードへ</button><button class="full" style="margin-top:10px" onclick="home()">ホームへ</button>`}
 
-fetch("words.json?v=9").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{all=j;applyRange();home()})
+fetch("words.json?v=10").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{all=j;applyRange();home()})
  .catch(e=>{$().innerHTML='<div class="box">単語データを読み込めません：'+esc(e.message)+'</div>'});
 </script></body></html>
