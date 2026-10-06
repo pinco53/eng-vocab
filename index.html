@@ -113,11 +113,12 @@ function home(){ses=null;const p=plan(),cs=all.filter(w=>card(w)),wr=cs.filter(w
  <div class="bar" style="margin-top:14px"><i style="width:${all.length?cs.length/all.length*100:0}%"></i></div><div class="dim center" style="margin-top:4px">全${all.length}語</div></div>
  ${any?`<button class="main" onclick="start()">今日の学習をはじめる</button><div class="dim center" style="margin-top:8px">復習 ${rev}語 ＋ 新しい単語 ${p.fresh.length}語${p.due.length>rev?`（残り ${p.due.length-rev}語は次の回）`:""}</div>`
  :`<div class="box center"><div style="font-size:40px">🎉</div><b>今日の分はおわり！</b><div class="dim">また明日。つづきは明日出ます。</div></div>${p.left?`<button class="full" onclick="more()">あと5語すすめる</button>`:""}`}
- <button class="full" style="margin-top:22px;background:#fde68a" onclick="testSetup()">📝 テスト勉強モード（長時間・範囲をしぼって）</button>
+ <a href="reading/" style="display:block;margin-top:22px"><button class="full" style="background:#ddd6fe">📖 教科書の本文（中間テスト Program 3・4）</button></a>
+ <button class="full" style="margin-top:10px;background:#fde68a" onclick="testSetup()">📝 テスト勉強モード（長時間・範囲をしぼって）</button>
  <button class="full" style="margin-top:10px" onclick="record()">📒 学習の記録を見る</button>
  <a href="phonics/" style="display:block;margin-top:10px"><button class="full">🔤 フォニックス（つづりと音のきまり）</button></a>
  <a href="grammar/" style="display:block;margin-top:10px"><button class="full">📘 中2 英文法カードへ</button></a>
- <div class="center" style="margin-top:6px"><button class="ghost" onclick="settings()">⚙ 設定</button></div><div class="dim center">版 10</div>`}
+ <div class="center" style="margin-top:6px"><button class="ghost" onclick="settings()">⚙ 設定</button></div><div class="dim center">版 11</div>`}
 function more(){const t=dstr();S.bonus={date:t,n:((S.bonus&&S.bonus.date===t)?S.bonus.n:0)+5};saveS();start()}
 // ===== 学習の流れ =====
 const canSpell=w=>/^[A-Za-z' ]+$/.test(w.word)&&w.word.replace(/ /g,"").length<=12;

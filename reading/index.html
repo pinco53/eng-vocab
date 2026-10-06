@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta http-equiv="Cache-Control" content="no-cache"><meta name="theme-color" content="#7c3aed">
+<title>教科書の本文（中間テスト）</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0 auto;font-family:-apple-system,"Hiragino Sans",system-ui,sans-serif;background:#f5f3ff;color:#0f172a;padding:calc(12px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));max-width:520px}
+button{font-family:inherit;font-size:18px;border:0;border-radius:14px;min-height:52px;padding:0 16px;background:#ede9fe;color:#0f172a;touch-action:manipulation}
+.main{width:100%;background:#7c3aed;color:#fff;font-weight:bold;min-height:62px;font-size:20px}
+.full{width:100%}.ghost{background:none;color:#475569;font-size:15px;min-height:40px}
+.box{background:#fff;border-radius:18px;padding:16px 18px;margin:12px 0;box-shadow:0 1px 3px #0001}
+.dim{color:#64748b;font-size:14px}.center{text-align:center}
+.bar{height:10px;background:#ddd6fe;border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;background:#7c3aed}
+.en{font-size:22px;font-weight:bold;line-height:1.45}.ja{font-size:17px;color:#b45309;margin-top:4px}
+.sp{font-size:13px;color:#7c3aed;font-weight:bold}
+.line{padding:10px 0;border-bottom:1px solid #ede9fe}
+.ch{display:block;width:100%;margin:10px 0;min-height:58px;font-size:18px;background:#fff;border:2px solid #cbd5e1;text-align:left;padding:8px 14px}
+.ok{background:#bbf7d0!important;border-color:#16a34a!important}.ng{background:#fecaca!important;border-color:#dc2626!important}
+.tiles{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}.tile{min-height:48px;padding:0 12px;font-size:19px;background:#fff;border:2px solid #a78bfa}.tile.used{opacity:.2}
+.ans{min-height:60px;background:#faf5ff;border:2px dashed #a78bfa;border-radius:12px;padding:8px;font-size:20px;font-weight:bold;margin:10px 0}
+</style></head><body>
+<script src="data.js?v=1"></script>
+<div id="app"></div>
+<script>
+const KEY="reading-mid2-v1";let S;try{S=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){S={}}S.r=S.r||{};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const $=()=>document.getElementById("app");
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+let au=null;function play(id,cb){try{if(au){au.onended=null;au.pause()}au=new Audio("audio/"+id+".m4a");au.playbackRate=S.slow?0.8:1;if(cb)au.onended=cb;const p=au.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
+function beep(ok){try{const A=window.AudioContext||window.webkitAudioContext;const c=window._ac=window._ac||new A();const o=c.createOscillator(),g=c.createGain();o.frequency.value=ok?880:170;o.type=ok?"sine":"sawtooth";g.gain.value=.05;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.18)}catch(e){}}
+const key=(p,i)=>p.id+"-"+i;
+const done=p=>p.s.filter((_,i)=>(S.r[key(p,i)]||0)>=2).length;
+// ===== ホーム =====
+function home(){
+ const tot=PARTS.reduce((a,p)=>a+p.s.length,0),d=PARTS.reduce((a,p)=>a+done(p),0);
+ $().innerHTML=`<h1 style="font-size:20px;margin:6px 0 2px">📖 教科書の本文（中間テスト）</h1><div class="dim">Program 3・4　聞く → 意味 → 並べ替え → 内容の質問</div>
+ <div class="box"><b>仕上がった文：${d} / ${tot}</b><div class="bar" style="margin-top:8px"><i style="width:${d/tot*100}%"></i></div></div>
+ <button class="main" onclick="test(PARTS)">📝 全部の本文でテスト練習</button>
+ ${PARTS.map((p,i)=>`<div class="box"><b>${esc(p.t)}</b><div class="dim">${p.s.length}文　仕上がり ${done(p)}/${p.s.length}</div>
+  <div style="display:flex;gap:8px;margin-top:8px"><button style="flex:1" onclick="read(${i})">🎧 読む</button><button style="flex:1;background:#7c3aed;color:#fff" onclick="test([PARTS[${i}]])">📝 練習</button></div></div>`).join("")}
+ <label style="display:block;margin:8px 0"><input type="checkbox" ${S.slow?"checked":""} onchange="S.slow=this.checked;save()"> 音声をゆっくりにする</label>
+ <a href="../"><button class="full">📇 英単語アプリへもどる</button></a>
+ <div class="dim" style="margin-top:10px">日本語訳は学習用に作ったものです。教科書・授業の訳とちがうことがあります。</div>`}
+// ===== 🎧 読む：1文ずつ聞いて、訳をタップで表示 =====
+function read(pi,i){const p=PARTS[pi];
+ $().innerHTML=`<button class="ghost" onclick="home()">◀ もどる</button><h2 style="font-size:18px">${esc(p.t)}</h2>
+ <button class="main" onclick="playAll(${pi},0)">▶ 全部続けて聞く</button>
+ <div class="dim" style="margin:8px 0">文をタップすると、その文の音声と日本語訳が出ます。<br>①聞く→②声に出してまねする（シャドーイング）→③訳を見ずに意味を言う</div>
+ <div class="box">${p.s.map((x,k)=>`<div class="line" id="l${k}" onclick="tapLine(${pi},${k})"><div class="sp">${esc(x[0])}</div><div class="en">${esc(x[1])}</div><div class="ja" id="j${k}" style="display:none">${esc(x[2])}</div></div>`).join("")}</div>
+ <button class="full" onclick="document.querySelectorAll('.ja').forEach(e=>e.style.display='block')">訳をすべて表示</button>
+ <button class="main" style="margin-top:10px" onclick="test([PARTS[${pi}]])">📝 このPartで練習する</button>`}
+function tapLine(pi,k){const e=document.getElementById("j"+k);e.style.display="block";mark(k);play(key(PARTS[pi],k))}
+function mark(k){document.querySelectorAll(".line").forEach((x,j)=>x.style.background=j===k?"#ede9fe":"")}
+function playAll(pi,k){const p=PARTS[pi];if(k>=p.s.length){mark(-1);return}mark(k);document.getElementById("l"+k).scrollIntoView({block:"center",behavior:"smooth"});play(key(p,k),()=>setTimeout(()=>playAll(pi,k+1),400))}
+// ===== 📝 練習：①意味を選ぶ ②並べ替え ③内容の質問。2回正解で仕上がり、まちがいは少しあとに再登場 =====
+let T=null;
+function test(parts){const q=[];
+ parts.forEach(p=>{p.s.forEach((x,i)=>{if((S.r[key(p,i)]||0)<2){q.push({k:"mean",p,i});q.push({k:"order",p,i})}});p.qa.forEach((x,i)=>q.push({k:"qa",p,i}))});
+ const firsts=shuf(q.filter(x=>x.k!=="order")),orders=shuf(q.filter(x=>x.k==="order"));
+ T={q:[...firsts,...orders],n:0,ok:0,ng:0,wrong:[],parts};T.total=T.q.length;if(!T.total){alert("このPartはすべて仕上がっています！");home();return}next()}
+function head(l){return `<div style="display:flex;justify-content:space-between"><span class="sp">${l}</span><button class="ghost" onclick="T=null;home()">やめる</button></div><div class="bar"><i style="width:${T.n/T.total*100}%"></i></div>`}
+function next(){if(!T)return;if(!T.q.length){end();return}const c=T.cur=T.q.shift();T.lock=false;({mean,order,qa})[c.k](c)}
+function mean(c){const x=c.p.s[c.i];const pool=shuf(PARTS.flatMap(p=>p.s.map(y=>y[2])).filter(j=>j!==x[2]));c.opts=shuf([x[2],...pool.slice(0,3)]);
+ $().innerHTML=`${head("① この文の意味は？")}<div class="box"><div class="sp">${esc(x[0])}</div><div class="en">${esc(x[1])}</div><button style="margin-top:8px" onclick="play('${key(c.p,c.i)}')">🔊</button></div>
+ ${c.opts.map((o,k)=>`<button class="ch" onclick="pick(${k})">${esc(o)}</button>`).join("")}`;play(key(c.p,c.i))}
+function qa(c){const x=c.p.qa[c.i];c.ans=x[1][0];c.opts=shuf(x[1]);
+ $().innerHTML=`${head("③ 本文の内容の質問")}<div class="dim">${esc(c.p.t)}</div><div class="box"><div class="en">${esc(x[0])}</div></div>
+ ${c.opts.map((o,k)=>`<button class="ch" onclick="pick(${k})">${esc(o)}</button>`).join("")}<button class="full" onclick="peek()">📖 本文を見る（ヒント）</button><div id="pk"></div>`}
+function peek(){T.cur.hint=true;document.getElementById("pk").innerHTML=`<div class="box">${T.cur.p.s.map(x=>`<div style="margin:4px 0"><b>${esc(x[0])}:</b> ${esc(x[1])}</div>`).join("")}</div>`}
+function pick(k){if(T.lock)return;T.lock=true;const c=T.cur,right=c.k==="qa"?c.ans:c.p.s[c.i][2];
+ document.querySelectorAll(".ch").forEach((b,j)=>{if(c.opts[j]===right)b.classList.add("ok");else if(j===k)b.classList.add("ng")});
+ result(c.opts[k]===right)}
+function order(c){const x=c.p.s[c.i];const words=x[1].split(/\s+/);c.words=words;c.picked=[];
+ let tl=shuf(words.map((w,k)=>({w,k})));if(words.length>1)for(let n=0;n<5&&tl.every((t,j)=>t.k===j);n++)tl=shuf(tl);c.tiles=tl;drawOrder()}
+function drawOrder(){const c=T.cur,x=c.p.s[c.i];
+ $().innerHTML=`${head("② 語を並べかえて、本文の文にしよう")}<div class="box"><div class="sp">${esc(x[0])}</div><div class="ja" style="font-size:18px">${esc(x[2])}</div>
+ <div class="ans">${c.picked.map(t=>esc(c.tiles[t].w)).join(" ")||"&nbsp;"}</div></div>
+ <div class="tiles">${c.tiles.map((t,j)=>`<button class="tile ${c.picked.includes(j)?"used":""}" onclick="tapW(${j})">${esc(t.w)}</button>`).join("")}</div>
+ <div style="display:flex;gap:8px;margin-top:12px"><button style="flex:1" onclick="undoW()">⌫ もどす</button><button style="flex:1;background:#fef3c7" onclick="hintW()">💡 ヒント</button><button style="flex:1" onclick="T.lock=true;result(false)">わからない</button></div>`}
+function tapW(j){const c=T.cur;if(T.lock||c.picked.includes(j))return;c.picked.push(j);drawOrder();
+ if(c.picked.length===c.words.length){T.lock=true;result(c.picked.map(t=>c.tiles[t].w).join(" ")===c.words.join(" "))}}
+function undoW(){if(T.lock)return;T.cur.picked.pop();drawOrder()}
+function hintW(){const c=T.cur;if(T.lock)return;c.hint=true;while(c.picked.length&&c.tiles[c.picked[c.picked.length-1]].w!==c.words[c.picked.length-1])c.picked.pop();
+ while(c.picked.some((t,j)=>c.tiles[t].w!==c.words[j]))c.picked.pop();const n=c.picked.length;const j=c.tiles.findIndex((t,jj)=>!c.picked.includes(jj)&&t.w===c.words[n]);if(j>=0)tapW(j);play(key(c.p,c.i))}
+function result(ok){const c=T.cur,my=T;T.n++;beep(ok);
+ if(c.k!=="qa"){const k=key(c.p,c.i);if(ok&&!c.hint&&c.k==="order")S.r[k]=(S.r[k]||0)+1;if(!ok)S.r[k]=0;save()}
+ if(ok){T.ok++;if(c.k!=="qa")play(key(c.p,c.i));setTimeout(()=>{if(T===my)next()},c.k==="order"?1800:900);return}
+ T.ng++;if(!T.wrong.includes(c))T.wrong.push(c);T.q.splice(Math.min(3,T.q.length),0,{...c,hint:false});T.total++;
+ setTimeout(()=>{if(T!==my)return;const x=c.k==="qa"?null:c.p.s[c.i];
+  $().innerHTML=`${head("こたえ")}<div class="box">${c.k==="qa"?`<div class="en">${esc(c.p.qa[c.i][0])}</div><div class="ja" style="font-size:20px">→ ${esc(c.ans)}</div>`:`<div class="sp">${esc(x[0])}</div><div class="en">${esc(x[1])}</div><div class="ja">${esc(x[2])}</div><button style="margin-top:8px" onclick="play('${key(c.p,c.i)}')">🔊 もう一度聞く</button>`}</div>
+  <div class="dim center" style="margin-bottom:8px">声に出して2回読んでから進もう。少しあとにもう一度出ます。</div><button class="main" onclick="next()">次へ</button>`;if(x)play(key(c.p,c.i))},700)}
+function end(){const t=T;T=null;
+ $().innerHTML=`<div class="box center"><div style="font-size:44px">🎉</div><h2>おつかれさま！</h2><div>正解 ${t.ok}　まちがい ${t.ng}</div></div>
+ ${t.wrong.filter(c=>c.k!=="qa").length?`<div class="box"><b>✏️ ノートに書き写そう（まちがえた文）</b>${[...new Set(t.wrong.filter(c=>c.k!=="qa").map(c=>c.p.s[c.i][1]))].map(s=>`<div style="margin:6px 0">${esc(s)}</div>`).join("")}</div>`:""}
+ <button class="main" onclick="home()">もどる</button>`}
+home();
+</script></body></html>
